@@ -8,6 +8,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { removeUserKey, saveUserKey } from "@/lib/ai/byok";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -81,4 +82,32 @@ export async function deleteAccount(input: { confirm: string }): Promise<Setting
   const supabase = await createClient();
   await supabase.auth.signOut({ scope: "local" }).catch(() => {});
   redirect("/?account=deleted");
+}
+
+// ---------------------------------------------------------------------------
+// Bring your own key (Section 4.5.4)
+// ---------------------------------------------------------------------------
+
+const AiKeySchema = z.object({ provider: z.enum(["gemini", "openrouter"]), apiKey: z.string().min(1).max(400) });
+
+export type AiKeyResult =
+  | { ok: true; message: string; status: { provider: "gemini" | "openrouter"; last4: string; validatedAt: string | null } }
+  | { ok: false; message: string };
+
+/** Check the key with one small call, then store it encrypted. Only the last 4 characters come back. */
+export async function saveAiKey(input: { provider: string; apiKey: string }): Promise<AiKeyResult> {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login?next=/app/settings");
+  const parsed = AiKeySchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: "Choose a provider and paste a key." };
+  const result = await saveUserKey(user, parsed.data.provider, parsed.data.apiKey);
+  if (!result.ok) return result;
+  return { ok: true, message: "Key checked and saved. Your lessons and tutor now use it.", status: result.status };
+}
+
+export async function removeAiKey(): Promise<SettingsResult> {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login?next=/app/settings");
+  if (!(await removeUserKey(user.id))) return { ok: false, message: "Couldn't remove your key. Try again." };
+  return { ok: true, message: "Key removed. Sapience's shared free capacity and daily limits apply again." };
 }

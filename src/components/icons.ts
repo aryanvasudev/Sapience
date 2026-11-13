@@ -14,20 +14,24 @@ export { ArrowBackW400 as ArrowBackIcon } from "@material-symbols-svg/react/roun
 export { ArrowForwardW400 as ArrowForwardIcon } from "@material-symbols-svg/react/rounded/icons/arrow-forward";
 export { BookmarkAddedW400 as BookmarkAddedIcon } from "@material-symbols-svg/react/rounded/icons/bookmark-added";
 export { BookmarkAddW400 as BookmarkAddIcon } from "@material-symbols-svg/react/rounded/icons/bookmark-add";
+export { BookmarkW400 as BookmarkIcon } from "@material-symbols-svg/react/rounded/icons/bookmark";
 export { CancelW400 as CancelIcon } from "@material-symbols-svg/react/rounded/icons/cancel";
 export { CheckCircleW400 as CheckCircleIcon } from "@material-symbols-svg/react/rounded/icons/check-circle";
 export { CheckW400 as CheckIcon } from "@material-symbols-svg/react/rounded/icons/check";
 export { ChevronRightW400 as ChevronRightIcon } from "@material-symbols-svg/react/rounded/icons/chevron-right";
 export { CloseW400 as CloseIcon } from "@material-symbols-svg/react/rounded/icons/close";
 export { ComputerW400 as ComputerIcon } from "@material-symbols-svg/react/rounded/icons/computer";
+export { ContentCopyW400 as ContentCopyIcon } from "@material-symbols-svg/react/rounded/icons/content-copy";
 export { ContentPasteW400 as ContentPasteIcon } from "@material-symbols-svg/react/rounded/icons/content-paste";
 export { DarkModeW400 as DarkModeIcon } from "@material-symbols-svg/react/rounded/icons/dark-mode";
 export { DeleteW400 as DeleteIcon } from "@material-symbols-svg/react/rounded/icons/delete";
 export { DescriptionW400 as DescriptionIcon } from "@material-symbols-svg/react/rounded/icons/description";
+export { EditW400 as EditIcon } from "@material-symbols-svg/react/rounded/icons/edit";
 export { EditNoteW400 as EditNoteIcon } from "@material-symbols-svg/react/rounded/icons/edit-note";
 export { ErrorW400 as ErrorIcon } from "@material-symbols-svg/react/rounded/icons/error";
 export { EventRepeatW400 as EventRepeatIcon } from "@material-symbols-svg/react/rounded/icons/event-repeat";
 export { FactCheckW400 as FactCheckIcon } from "@material-symbols-svg/react/rounded/icons/fact-check";
+export { FilterListW400 as FilterListIcon } from "@material-symbols-svg/react/rounded/icons/filter-list";
 export { FlagW400 as FlagIcon } from "@material-symbols-svg/react/rounded/icons/flag";
 export { ForumW400 as ForumIcon } from "@material-symbols-svg/react/rounded/icons/forum";
 export { HelpW400 as HelpIcon } from "@material-symbols-svg/react/rounded/icons/help";
@@ -37,6 +41,7 @@ export { HourglassTopW400 as HourglassTopIcon } from "@material-symbols-svg/reac
 export { InfoW400 as InfoIcon } from "@material-symbols-svg/react/rounded/icons/info";
 export { KeyboardArrowDownW400 as KeyboardArrowDownIcon } from "@material-symbols-svg/react/rounded/icons/keyboard-arrow-down";
 export { KeyW400 as KeyIcon } from "@material-symbols-svg/react/rounded/icons/key";
+export { LibraryAddW400 as LibraryAddIcon } from "@material-symbols-svg/react/rounded/icons/library-add";
 export { LightbulbW400 as LightbulbIcon } from "@material-symbols-svg/react/rounded/icons/lightbulb";
 export { LightModeW400 as LightModeIcon } from "@material-symbols-svg/react/rounded/icons/light-mode";
 export { LinkW400 as LinkIcon } from "@material-symbols-svg/react/rounded/icons/link";
@@ -45,6 +50,7 @@ export { LogoutW400 as LogoutIcon } from "@material-symbols-svg/react/rounded/ic
 export { MarkEmailReadW400 as MarkEmailReadIcon } from "@material-symbols-svg/react/rounded/icons/mark-email-read";
 export { MenuBookW400 as MenuBookIcon } from "@material-symbols-svg/react/rounded/icons/menu-book";
 export { MenuW400 as MenuIcon } from "@material-symbols-svg/react/rounded/icons/menu";
+export { MonitoringW400 as MonitoringIcon } from "@material-symbols-svg/react/rounded/icons/monitoring";
 export { MoreHorizW400 as MoreHorizIcon } from "@material-symbols-svg/react/rounded/icons/more-horiz";
 export { NotesW400 as NotesIcon } from "@material-symbols-svg/react/rounded/icons/notes";
 export { OpenInNewW400 as OpenInNewIcon } from "@material-symbols-svg/react/rounded/icons/open-in-new";
@@ -53,6 +59,7 @@ export { PauseW400 as PauseIcon } from "@material-symbols-svg/react/rounded/icon
 export { PersonAddW400 as PersonAddIcon } from "@material-symbols-svg/react/rounded/icons/person-add";
 export { PlayArrowW400 as PlayArrowIcon } from "@material-symbols-svg/react/rounded/icons/play-arrow";
 export { PlayCircleW400 as PlayCircleIcon } from "@material-symbols-svg/react/rounded/icons/play-circle";
+export { PrintW400 as PrintIcon } from "@material-symbols-svg/react/rounded/icons/print";
 export { ProgressActivityW400 as ProgressActivityIcon } from "@material-symbols-svg/react/rounded/icons/progress-activity";
 export { QuizW400 as QuizIcon } from "@material-symbols-svg/react/rounded/icons/quiz";
 export { RefreshW400 as RefreshIcon } from "@material-symbols-svg/react/rounded/icons/refresh";
@@ -62,6 +69,8 @@ export { SchoolW400 as SchoolIcon } from "@material-symbols-svg/react/rounded/ic
 export { SearchW400 as SearchIcon } from "@material-symbols-svg/react/rounded/icons/search";
 export { SendW400 as SendIcon } from "@material-symbols-svg/react/rounded/icons/send";
 export { SettingsW400 as SettingsIcon } from "@material-symbols-svg/react/rounded/icons/settings";
+export { ShareW400 as ShareIcon } from "@material-symbols-svg/react/rounded/icons/share";
+export { StickyNote2W400 as StickyNote2Icon } from "@material-symbols-svg/react/rounded/icons/sticky-note-2";
 export { StopCircleW400 as StopCircleIcon } from "@material-symbols-svg/react/rounded/icons/stop-circle";
 export { SummarizeW400 as SummarizeIcon } from "@material-symbols-svg/react/rounded/icons/summarize";
 export { SupportW400 as SupportIcon } from "@material-symbols-svg/react/rounded/icons/support";

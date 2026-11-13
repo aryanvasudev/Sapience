@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { LessonRow } from "@/components/shared/lesson-row";
 import { ConceptList } from "@/features/library/components/concept-list";
+import { LessonList } from "@/features/library/components/lesson-list";
 import { requireUser } from "@/lib/auth";
 import { listOpenedLessons, listSavedConcepts } from "@/lib/library/service";
 
@@ -43,13 +43,7 @@ async function LibraryLoader() {
               <p className="text-[0.9375rem]">Lectures you open will show up here, with where you stopped.</p>
             </div>
           ) : (
-            <ul className="divide-y overflow-hidden rounded-[14px] border bg-card">
-              {lessons.map((l) => (
-                <li key={l.videoId}>
-                  <LessonRow item={l} />
-                </li>
-              ))}
-            </ul>
+            <LessonList lessons={lessons} />
           )}
         </div>
       </section>

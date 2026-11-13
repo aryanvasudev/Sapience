@@ -349,7 +349,7 @@ isOneToOne: false
 { Args: { "p_kind": string,"p_limit": number,"p_user_id": string }; Returns: boolean
                            },
 "create_lesson":
-{ Args: { "p_created_by": string,"p_job_kind": string,"p_job_payload": Json,"p_output_language": string,"p_prompt_version": string,"p_source": string,"p_youtube_video_id": string }; Returns: {
+{ Args: { "p_byok_user_id"?: string,"p_created_by": string,"p_job_kind": string,"p_job_payload": Json,"p_output_language": string,"p_prompt_version": string,"p_source": string,"p_youtube_video_id": string }; Returns: {
               "created": boolean,"job_id": string,"lesson_id": string
             }[]
                            },
@@ -372,7 +372,7 @@ isOneToOne: false
 { Args: { "p_delay_seconds": number,"p_job_id": string }; Returns: undefined
                            },
 "restart_lesson":
-{ Args: { "p_job_kind": string,"p_job_payload": Json,"p_lesson_id": string,"p_min_age_seconds": number,"p_source": string }; Returns: string
+{ Args: { "p_byok_user_id"?: string,"p_job_kind": string,"p_job_payload": Json,"p_lesson_id": string,"p_min_age_seconds": number,"p_source": string }; Returns: string
                            },
 "retry_chapters":
 { Args: { "p_lesson_id": string,"p_position": number }; Returns: string[]

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useTransition } from "react";
 
-import { ComputerIcon, DarkModeIcon, LightModeIcon, LogoutIcon, PersonAddIcon, SettingsIcon } from "@/components/icons";
+import { ComputerIcon, DarkModeIcon, LightModeIcon, LogoutIcon, MonitoringIcon, PersonAddIcon, SettingsIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -19,7 +19,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { signOut } from "@/features/auth/actions";
 
-export function UserMenu({ email, isAnonymous }: { email: string | null; isAnonymous: boolean }) {
+export function UserMenu({
+  email,
+  isAnonymous,
+  isAdmin = false,
+}: {
+  email: string | null;
+  isAnonymous: boolean;
+  isAdmin?: boolean;
+}) {
   const { theme, setTheme } = useTheme();
   const [pending, startTransition] = useTransition();
   const name = isAnonymous ? "Guest" : (email ?? "Your account");
@@ -57,6 +65,14 @@ export function UserMenu({ email, isAnonymous }: { email: string | null; isAnony
             Settings
           </Link>
         </DropdownMenuItem>
+        {isAdmin ? (
+          <DropdownMenuItem asChild>
+            <Link href="/app/admin/usage">
+              <MonitoringIcon />
+              Usage
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Theme</DropdownMenuLabel>

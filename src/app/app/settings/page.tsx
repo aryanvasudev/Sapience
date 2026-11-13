@@ -3,7 +3,10 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { AccountSection, DataSection } from "@/features/settings/components/account-section";
+import { AiKeySection } from "@/features/settings/components/ai-key-section";
 import { PreferencesForm } from "@/features/settings/components/preferences-form";
+import { byokEnabled, keyStatus } from "@/lib/ai/byok";
+import { chainsForKeyCheck } from "@/lib/ai/provider";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { parsePreferences } from "@/types/contracts";
@@ -26,13 +29,21 @@ export default function SettingsPage() {
 async function SettingsLoader() {
   const user = await requireUser("/app/settings");
   const supabase = await createClient();
-  const { data: profile } = await supabase.from("profiles").select("preferences").eq("id", user.id).maybeSingle();
+  const [{ data: profile }, aiKey] = await Promise.all([
+    supabase.from("profiles").select("preferences").eq("id", user.id).maybeSingle(),
+    keyStatus(user.id),
+  ]);
 
   return (
     <>
       <Section id="preferences" title="Learning preferences">
         <PreferencesForm initial={parsePreferences(profile?.preferences)} />
       </Section>
+      {byokEnabled() ? (
+        <Section id="ai-key" title="Your own AI key">
+          <AiKeySection initial={aiKey} openRouterAvailable={chainsForKeyCheck("openrouter").text.length > 0} />
+        </Section>
+      ) : null}
       <Section id="account" title="Account">
         <AccountSection email={user.email} isAnonymous={user.isAnonymous} />
       </Section>

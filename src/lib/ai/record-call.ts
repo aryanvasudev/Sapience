@@ -29,7 +29,7 @@ export async function recordAiCall(record: AiCallRecord): Promise<void> {
         provider: record.spec.provider,
         model: record.spec.modelId,
         fallback_from: record.fallbackFrom ? `${record.fallbackFrom.provider}:${record.fallbackFrom.modelId}` : null,
-        byok: record.byok ?? false,
+        byok: record.byok ?? record.spec.byok === true,
         user_id: record.userId ?? null,
         lesson_id: record.lessonId ?? null,
         input_tokens: record.inputTokens ?? null,

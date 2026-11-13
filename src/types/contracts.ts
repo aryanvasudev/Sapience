@@ -289,6 +289,15 @@ export const ReviewRequestSchema = z.object({ rating: RecallRatingSchema });
 export type ReviewRequest = z.infer<typeof ReviewRequestSchema>;
 
 export const CreateConceptResponseSchema = z.object({ concept: ConceptSchema, revisionItem: RevisionItemViewSchema });
+
+/** "Add all key terms to revision" (P1): one concept per key term of the lesson's ready chapters. */
+export const KeyTermsRequestSchema = z.object({ youtubeVideoId: YouTubeVideoId, language: OutputLanguageSchema });
+export type KeyTermsRequest = z.infer<typeof KeyTermsRequestSchema>;
+export const KeyTermsResponseSchema = z.object({
+  added: z.number().int().min(0),
+  alreadySaved: z.number().int().min(0),
+});
+export type KeyTermsResponse = z.infer<typeof KeyTermsResponseSchema>;
 export const RevisionFilterSchema = z.enum(["due", "upcoming", "all"]);
 export const RevisionListResponseSchema = z.object({ items: z.array(RevisionItemViewSchema) });
 export const ReviewResponseSchema = z.object({ revisionItem: RevisionItemViewSchema });

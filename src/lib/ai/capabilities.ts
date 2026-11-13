@@ -6,7 +6,11 @@ import type { ServerEnv } from "@/env";
 import type { Capabilities } from "@/types/contracts";
 
 export type AiProviderName = "gemini" | "openrouter";
-export type ModelSpec = { provider: AiProviderName; modelId: string };
+/**
+ * One model to try. `byok` marks a model that runs on the student's own key (Section 4.5.4); the
+ * key itself never lives on the spec, so specs stay safe to log and record.
+ */
+export type ModelSpec = { provider: AiProviderName; modelId: string; byok?: true };
 
 type AiEnv = Pick<
   ServerEnv,
@@ -63,4 +67,43 @@ export function videoModelSpec(env: AiEnv): ModelSpec | null {
     return { provider: "openrouter", modelId: env.OPENROUTER_VIDEO_MODEL };
   }
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Bring your own key (Section 4.5.4)
+// ---------------------------------------------------------------------------
+
+type ModelEnv = Pick<AiEnv, "GEMINI_MODEL" | "GEMINI_LITE_MODEL" | "OPENROUTER_MODEL" | "OPENROUTER_LITE_MODEL" | "OPENROUTER_VIDEO_MODEL">;
+
+/**
+ * Text chain on a student's key: only that provider's models, never the app's key, so a busy
+ * personal key never spends the shared free quota. Empty when the provider has no model set.
+ */
+export function byokTextChain(env: ModelEnv, provider: AiProviderName, tier: "main" | "lite"): ModelSpec[] {
+  const ids =
+    provider === "gemini"
+      ? [tier === "main" ? env.GEMINI_MODEL : undefined, env.GEMINI_LITE_MODEL]
+      : [tier === "main" ? (env.OPENROUTER_MODEL ?? env.OPENROUTER_LITE_MODEL) : undefined, env.OPENROUTER_LITE_MODEL];
+  const chain: ModelSpec[] = [];
+  for (const modelId of ids) {
+    if (modelId && !chain.some((m) => m.modelId === modelId)) chain.push({ provider, modelId, byok: true });
+  }
+  return chain;
+}
+
+/** Video model on a student's key: Gemini always can; OpenRouter only with a video model set. */
+export function byokVideoSpec(env: ModelEnv, provider: AiProviderName): ModelSpec | null {
+  if (provider === "gemini") return { provider, modelId: env.GEMINI_MODEL, byok: true };
+  return env.OPENROUTER_VIDEO_MODEL ? { provider, modelId: env.OPENROUTER_VIDEO_MODEL, byok: true } : null;
+}
+
+/** What the app can do for a student with their own key of this provider. */
+export function byokCapabilities(env: ModelEnv, provider: AiProviderName): Capabilities {
+  const video = byokVideoSpec(env, provider) !== null;
+  return {
+    videoLessons: video,
+    videoClipping: provider === "gemini",
+    tutorClip: provider === "gemini",
+    agenticVideo: video,
+  };
 }

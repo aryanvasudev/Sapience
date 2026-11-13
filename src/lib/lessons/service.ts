@@ -8,11 +8,11 @@ import { after } from "next/server";
 
 import type { LessonStatus, OutputLanguage } from "@/config/enums";
 import { serverEnv } from "@/env";
-import { capabilities } from "@/lib/ai/provider";
+import { lessonKey, userKeyFor } from "@/lib/ai/byok";
+import { capabilities, runWithUserKey, type UserAiKey } from "@/lib/ai/provider";
 import type { CurrentUser } from "@/lib/auth";
 import { AppError } from "@/lib/errors";
 import { dispatchNext } from "@/lib/jobs/dispatch";
-import { consumeLessonQuota } from "@/lib/quota";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { parseTranscript } from "@/lib/transcript/parse";
@@ -31,7 +31,7 @@ const MIN_TRANSCRIPT_LINES = 5;
 
 type FirstJob = { kind: "full" | "outline" | "transcript"; payload: Json; source: "gemini_video" | "transcript_paste" };
 
-function planFirstJob(video: VideoRecord, transcript: string | undefined): FirstJob {
+function planFirstJob(video: VideoRecord, transcript: string | undefined, key: UserAiKey | null): FirstJob {
   if (transcript !== undefined) {
     const segments: TranscriptSegment[] = segmentTranscript(parseTranscript(transcript), video.durationSeconds);
     if (segments.length < 1 || parseTranscript(transcript).length < MIN_TRANSCRIPT_LINES) {
@@ -42,7 +42,8 @@ function planFirstJob(video: VideoRecord, transcript: string | undefined): First
     }
     return { kind: "transcript", payload: { segments }, source: "transcript_paste" };
   }
-  if (!capabilities().videoLessons) throw new AppError("video_ai_unavailable");
+  // With the student's own key, what their key can do decides (e.g. a Gemini key enables video).
+  if (!runWithUserKey(key, () => capabilities().videoLessons)) throw new AppError("video_ai_unavailable");
   const singlePass = video.durationSeconds <= serverEnv().LESSON_SINGLE_PASS_MAX_MINUTES * 60;
   return { kind: singlePass ? "full" : "outline", payload: {}, source: "gemini_video" };
 }
@@ -80,27 +81,33 @@ export async function openOrCreateLesson(input: {
   if (existing && existing.status !== "failed") return respond(existing.status as LessonStatus);
 
   const video = await getEligibleVideo(parsed.videoId);
-  const job = planFirstJob(video, input.transcript);
   const admin = createAdminClient();
+  // Plan against the student's key when they have one, so a video lesson isn't refused just
+  // because the app itself has no video model.
+  const plannedKey = await userKeyFor(input.user.id, input.transcript === undefined ? "video" : "text");
+  const job = planFirstJob(video, input.transcript, plannedKey);
+  const role = job.source === "gemini_video" ? "video" : "text";
 
   if (existing) {
     // Failed: retrying counts against the limit, and only after a short cool-down.
     const ageSeconds = (Date.now() - new Date(existing.updated_at).getTime()) / 1000;
     if (ageSeconds < RETRY_MIN_AGE_SECONDS) return respond("failed");
-    await consumeLessonQuota(input.user);
+    const key = await lessonKey(input.user, role);
     const { data: jobId, error } = await admin.rpc("restart_lesson", {
       p_lesson_id: existing.id,
       p_source: job.source,
       p_job_kind: job.kind,
       p_job_payload: job.payload,
       p_min_age_seconds: RETRY_MIN_AGE_SECONDS,
+      p_byok_user_id: key?.userId,
     });
     if (error) throw new AppError("internal");
     if (jobId) after(() => dispatchNext(existing.id));
     return respond(jobId ? "queued" : "failed");
   }
 
-  await consumeLessonQuota(input.user);
+  // Counts against the daily limits, unless the student builds it on their own key.
+  const key = await lessonKey(input.user, role);
   const { data, error } = await admin.rpc("create_lesson", {
     p_youtube_video_id: video.youtubeVideoId,
     p_output_language: input.language,
@@ -109,6 +116,7 @@ export async function openOrCreateLesson(input: {
     p_created_by: input.user.id,
     p_job_kind: job.kind,
     p_job_payload: job.payload,
+    p_byok_user_id: key?.userId,
   });
   const row = data?.[0];
   if (error || !row) throw new AppError("internal");

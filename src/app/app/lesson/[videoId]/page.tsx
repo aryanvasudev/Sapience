@@ -8,6 +8,7 @@ import { LessonScreen } from "@/features/lesson/components/lesson-screen";
 import { requireUser } from "@/lib/auth";
 import { getLessonStatus } from "@/lib/lessons/service";
 import { createClient } from "@/lib/supabase/server";
+import { listNotes } from "@/lib/notes/service";
 import { loadLatestConversation } from "@/lib/tutor/service";
 import { parseStartTime } from "@/lib/youtube/parse-url";
 import { getCachedVideo } from "@/lib/youtube/videos";
@@ -52,7 +53,11 @@ async function LessonLoader({
   const tParam = typeof query.t === "string" ? parseStartTime(query.t) : null;
   const startSeconds = tParam ?? progress?.last_position_seconds ?? 0;
 
-  const [status, conversation] = await Promise.all([getLessonStatus({ user, videoId, language }), loadLatestConversation(videoId)]);
+  const [status, conversation, notes] = await Promise.all([
+    getLessonStatus({ user, videoId, language }),
+    loadLatestConversation(videoId),
+    listNotes(videoId),
+  ]);
   if (!status) {
     const video = await getCachedVideo(videoId);
     return <BuildLessonPanel videoId={videoId} language={language} title={video?.title ?? null} />;
@@ -67,6 +72,7 @@ async function LessonLoader({
       pauseForCheckpoints={preferences.pauseForCheckpoints}
       defaultStyle={preferences.defaultStyle}
       initialMessages={conversation?.messages ?? []}
+      initialNotes={notes}
     />
   );
 }

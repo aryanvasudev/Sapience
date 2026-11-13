@@ -3,12 +3,20 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { CloseIcon, EventRepeatIcon, LightbulbIcon, ProgressActivityIcon, ReplayIcon } from "@/components/icons";
+import {
+  CloseIcon,
+  DescriptionIcon,
+  EventRepeatIcon,
+  LibraryAddIcon,
+  LightbulbIcon,
+  ProgressActivityIcon,
+  ReplayIcon,
+} from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import type { OutputLanguage } from "@/config/enums";
 import { requestJson } from "@/lib/client-api";
 import { formatTimestamp } from "@/lib/format";
-import { RecapSchema, type Recap } from "@/types/contracts";
+import { KeyTermsResponseSchema, RecapSchema, type Recap } from "@/types/contracts";
 
 import { CheckpointDiamond } from "./chapter-list";
 
@@ -23,9 +31,12 @@ export function RecapPanel({
   onRewatch,
   onExplain,
   onClose,
+  hasKeyTerms,
 }: {
   videoId: string;
   language: OutputLanguage;
+  /** Whether any ready chapter has key terms (hides "Add all key terms" otherwise). */
+  hasKeyTerms: boolean;
   /** Changes when the student answers something, so the counts are fresh. */
   refreshKey: number;
   onRewatch: (seconds: number) => void;
@@ -34,6 +45,7 @@ export function RecapPanel({
 }) {
   const [recap, setRecap] = useState<Recap | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -43,7 +55,7 @@ export function RecapPanel({
       else setError(r.message);
     });
     return () => controller.abort();
-  }, [videoId, language, refreshKey]);
+  }, [videoId, language, refreshKey, reload]);
 
   return (
     <section aria-labelledby="recap-title" className="grid gap-5 rounded-xl border border-foreground/12 bg-card p-5">
@@ -108,6 +120,18 @@ export function RecapPanel({
             <p className="text-sm text-muted-foreground">You haven&apos;t answered any checkpoints in this lecture yet.</p>
           )}
 
+          <div className="flex flex-wrap gap-2">
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/app/lesson/${videoId}/sheet?lang=${language}`}>
+                <DescriptionIcon />
+                Exam sheet
+              </Link>
+            </Button>
+            {hasKeyTerms ? (
+              <AddKeyTerms videoId={videoId} language={language} onAdded={() => setReload((n) => n + 1)} />
+            ) : null}
+          </div>
+
           {recap.savedConcepts.length > 0 ? (
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-foreground/10 pt-4">
               <p className="text-sm text-muted-foreground">
@@ -124,6 +148,44 @@ export function RecapPanel({
         </>
       )}
     </section>
+  );
+}
+
+function AddKeyTerms({ videoId, language, onAdded }: { videoId: string; language: OutputLanguage; onAdded: () => void }) {
+  const [state, setState] = useState<{ status: "idle" | "saving" } | { status: "done" | "error"; message: string }>({
+    status: "idle",
+  });
+  return (
+    <>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        disabled={state.status === "saving"}
+        onClick={async () => {
+          setState({ status: "saving" });
+          const r = await requestJson("/api/concepts/key-terms", KeyTermsResponseSchema, { body: { youtubeVideoId: videoId, language } });
+          if (!r.ok) return setState({ status: "error", message: r.message });
+          const { added, alreadySaved } = r.data;
+          setState({
+            status: "done",
+            message:
+              added === 0
+                ? "Every key term is already in revision."
+                : `Added ${added} key ${added === 1 ? "term" : "terms"}${alreadySaved ? ` (${alreadySaved} already saved)` : ""}. First review tomorrow.`,
+          });
+          if (added > 0) onAdded();
+        }}
+      >
+        {state.status === "saving" ? <ProgressActivityIcon className="animate-spin motion-reduce:animate-none" /> : <LibraryAddIcon />}
+        Add all key terms to revision
+      </Button>
+      {state.status === "done" || state.status === "error" ? (
+        <p role={state.status === "error" ? "alert" : "status"} className={state.status === "error" ? "w-full text-sm text-destructive" : "w-full text-sm text-muted-foreground"}>
+          {state.message}
+        </p>
+      ) : null}
+    </>
   );
 }
 

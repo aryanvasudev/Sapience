@@ -40,7 +40,9 @@ export function GuestButton({
           setError(null);
           startTransition(async () => {
             try {
-              const result = await signInAsGuest(await getCaptchaToken());
+              // Keep a shared lesson link working: /login?next=/app/lesson/… returns there.
+              const next = new URLSearchParams(window.location.search).get("next") ?? undefined;
+              const result = await signInAsGuest(await getCaptchaToken(), next);
               if (!result.ok) setError(result.message);
             } catch (e) {
               if (e instanceof CaptchaError) setError(e.message);

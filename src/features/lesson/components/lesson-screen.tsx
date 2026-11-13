@@ -1,17 +1,21 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { z } from "zod";
 
-import { ForumIcon, NotesIcon, OpenInNewIcon, SearchIcon } from "@/components/icons";
+import { DescriptionIcon, ForumIcon, NotesIcon, OpenInNewIcon, SearchIcon, StickyNote2Icon } from "@/components/icons";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OUTPUT_LANGUAGE_NAMES, type OutputLanguage, type TutorStyle } from "@/config/enums";
+import { MyNotesPanel } from "@/features/notes/my-notes-panel";
 import { TutorPanel } from "@/features/tutor/components/tutor-panel";
 import { useTutor } from "@/features/tutor/hooks/use-tutor";
 import { requestJson } from "@/lib/client-api";
 import { formatDuration } from "@/lib/format";
 import { seekTarget } from "@/lib/timestamps";
+import type { PersonalNote } from "@/lib/notes/service";
 import type { TutorUIMessage } from "@/lib/tutor/types";
 import type { AttemptResult, ChapterPublic, LessonStatusResponse } from "@/types/contracts";
 
@@ -25,6 +29,7 @@ import { LessonStatusBanner } from "./lesson-status-banner";
 import { NotesPanel } from "./notes-panel";
 import { RecapPanel } from "./recap-panel";
 import { SearchPanel } from "./search-panel";
+import { ShareButton } from "./share-button";
 import { TranscriptDialog } from "./transcript-dialog";
 
 const RetryResponseSchema = z.object({ status: z.string() });
@@ -33,8 +38,8 @@ export function chapterAt(chapters: ChapterPublic[], seconds: number): ChapterPu
   return chapters.find((c) => seconds >= c.startSeconds && seconds < c.endSeconds) ?? chapters[chapters.length - 1] ?? null;
 }
 
-type PanelTab = "tutor" | "notes" | "search";
-const PANEL_TABS: readonly PanelTab[] = ["tutor", "notes", "search"];
+type PanelTab = "tutor" | "notes" | "search" | "mine";
+const PANEL_TABS: readonly PanelTab[] = ["tutor", "notes", "search", "mine"];
 
 export function LessonScreen({
   initial,
@@ -44,6 +49,7 @@ export function LessonScreen({
   pauseForCheckpoints,
   defaultStyle,
   initialMessages,
+  initialNotes,
 }: {
   initial: LessonStatusResponse;
   videoId: string;
@@ -52,6 +58,7 @@ export function LessonScreen({
   pauseForCheckpoints: boolean;
   defaultStyle: TutorStyle;
   initialMessages: TutorUIMessage[];
+  initialNotes: PersonalNote[];
 }) {
   const router = useRouter();
   const { data, stalled, refresh } = useLessonStatus(initial, videoId, language);
@@ -224,6 +231,17 @@ export function LessonScreen({
               .filter(Boolean)
               .join(" · ")}
           </p>
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            {chapters.some((c) => c.status === "ready") ? (
+              <Button asChild size="sm" variant="outline">
+                <Link href={`/app/lesson/${videoId}/sheet?lang=${language}`}>
+                  <DescriptionIcon />
+                  Exam sheet
+                </Link>
+              </Button>
+            ) : null}
+            <ShareButton videoId={videoId} language={language} />
+          </div>
         </header>
 
         <LessonStatusBanner
@@ -281,6 +299,7 @@ export function LessonScreen({
             videoId={videoId}
             language={language}
             refreshKey={Object.keys(localAttempts).length}
+            hasKeyTerms={chapters.some((c) => c.status === "ready" && c.keyTerms.length > 0)}
             onRewatch={(seconds) => {
               setRecapOpen(false);
               seek(seconds);
@@ -307,6 +326,10 @@ export function LessonScreen({
               <TabsTrigger value="search">
                 <SearchIcon />
                 Search
+              </TabsTrigger>
+              <TabsTrigger value="mine">
+                <StickyNote2Icon />
+                Mine
               </TabsTrigger>
             </TabsList>
             {/* Kept mounted so a half-written question survives switching tabs. */}
@@ -336,6 +359,9 @@ export function LessonScreen({
               ) : (
                 <p className="text-sm text-muted-foreground">Notes appear here as each chapter is built. The tutor already works.</p>
               )}
+            </TabsContent>
+            <TabsContent value="mine" forceMount className="data-[state=inactive]:hidden">
+              <MyNotesPanel videoId={videoId} initialNotes={initialNotes} time={now} onSeek={seek} />
             </TabsContent>
             <TabsContent value="search">
               <SearchPanel videoId={videoId} language={language} chapters={chapters} onSeek={seek} />

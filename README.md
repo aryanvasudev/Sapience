@@ -14,7 +14,7 @@ The source of truth is [`SAPIENCE_IMPLEMENTATION_PLAN.md`](./SAPIENCE_IMPLEMENTA
 | 3: Checkpoints and tutor | **Code complete.** Grading, the tutor (streaming, fallback, persistence) and "Check my understanding" are verified against live Gemini on the local stack. The clip path ("What's on the board?") needs a real video. |
 | 4: Revision, search, recap | **Code complete.** Concepts, FSRS revision, AI search, recap and the due badge in the nav are verified on the local stack. |
 | 5: Dashboard, settings, library, polish | **Code complete.** Settings, Library, featured lessons, Turnstile, the Section 10 states, the E2E test and the pipeline integration test pass locally. Still needs: a deployed preview, real featured lessons, and the production checks below. |
-| 6 (P1) | Not started |
+| 6 (P1) | **Code complete for the hackathon.** Exam sheet, bring your own key (checked live with Gemini), add all key terms, admin usage page, personal notes and bookmarks, library filters and dashboard stats, and share link are verified locally. Whole-lecture questions (Gemini agentic video mode) are deferred. |
 
 ## Stack
 
@@ -146,6 +146,16 @@ Design rules follow Anthropic's frontend-design skill, Emil Kowalski's [design-e
 - **E2E deviation.** The plan's test plays the video to a checkpoint. The fixture's placeholder video can't play, so the test opens the checkpoint from the chapter list (auto-pause turned off in Settings). Auto-pause timing is covered by the unit tests for `crossedCheckpoint`; check it by hand with a real video.
 - **Touch targets.** The small `xs`/`sm` buttons keep their look but get an invisible 44 px hit area on touch screens.
 - **Phone header.** Below 640 px the wordmark shows only its diamond so Home, Library and Revision fit at 375 px.
+
+## Phase 6 (P1) notes
+
+- **New migration** `20261114000001_byok.sql`: `create_lesson` and `restart_lesson` take `p_byok_user_id`, and a trigger lets chapter jobs inherit it only while the outline job that creates them is running (so a later chapter retry by someone else never spends the first student's key). Push it with `pnpm exec supabase db push`.
+- **Bring your own key.** Set `BYOK_ENCRYPTION_KEY` to enable Settings → "Your own AI key". The key is checked with one small call, stored AES-256-GCM encrypted, and only its last 4 characters ever reach the browser. Requests run on it through an `AsyncLocalStorage` scope in `src/lib/ai/provider.ts`, so the key never sits on a `ModelSpec`, a log line or a response. With a key, the student's tutor, search, checks and lesson builds skip Sapience's daily limits, and a busy personal key never falls back to the app's key. `ai_calls.byok` records which calls used one. Never change `BYOK_ENCRYPTION_KEY` once keys are stored.
+- **Exam sheet** at `/app/lesson/<id>/sheet?lang=…` (linked from the lesson header and the recap): overview, formulas, checkpoints you missed on the first try (with answers, since you've attempted them), notes by chapter, your own notes and saved concepts. Print or "Save as PDF" gives ink on paper even from dark mode.
+- **Add all key terms** (recap) saves up to 40 key terms as concepts. Their answer side is the chapter summary, which the lesson already shows.
+- **Admin usage** at `/app/admin/usage` for emails in `ADMIN_EMAILS` (others get the 404 page): calls, success rate, tokens and model time by kind, model and lesson, from `ai_calls`.
+- **Notes and bookmarks**: the lesson's "Mine" tab. They're private (RLS) and appear on the exam sheet.
+- **Share** copies `/app/lesson/<id>?lang=…`. A signed-out recipient goes to sign-in, and "Try a lesson without an account" now returns them to that lesson.
 
 ## Measured numbers
 

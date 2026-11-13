@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { AppNav, AppNavFallback } from "@/components/layout/app-nav";
 import { UserMenu } from "@/components/layout/user-menu";
 import { Wordmark } from "@/components/layout/wordmark";
+import { isAdmin } from "@/lib/admin/usage";
 import { requireUser } from "@/lib/auth";
 import { dueCount } from "@/lib/revision/service";
 
@@ -15,7 +16,7 @@ import { dueCount } from "@/lib/revision/service";
 export default function AppLayout({ children }: LayoutProps<"/app">) {
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
+      <header className="sticky top-0 z-30 border-b bg-background/90 print:hidden backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-2 px-4 sm:gap-4 md:gap-6 md:px-6">
           <Wordmark href="/app" compact />
           <Suspense fallback={<AppNavFallback />}>
@@ -42,7 +43,7 @@ async function NavWithDueCount() {
 
 async function AccountMenu() {
   const user = await requireUser();
-  return <UserMenu email={user.email} isAnonymous={user.isAnonymous} />;
+  return <UserMenu email={user.email} isAnonymous={user.isAnonymous} isAdmin={isAdmin(user)} />;
 }
 
 async function AuthGate({ children }: { children: React.ReactNode }) {
@@ -50,7 +51,7 @@ async function AuthGate({ children }: { children: React.ReactNode }) {
   return (
     <>
       {user.isAnonymous ? (
-        <div className="border-b bg-surface">
+        <div className="border-b bg-surface print:hidden">
           <p className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-sm text-muted-foreground md:px-6">
             <span>You&apos;re trying Sapience as a guest. Create an account to keep your progress.</span>
             <Link
@@ -62,7 +63,7 @@ async function AuthGate({ children }: { children: React.ReactNode }) {
           </p>
         </div>
       ) : null}
-      <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 pt-10 pb-20 md:px-6 md:pt-14">
+      <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 pt-10 pb-20 md:px-6 md:pt-14 print:p-0">
         {children}
       </main>
     </>

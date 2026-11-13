@@ -129,18 +129,19 @@ export async function signUpWithPassword(input: SignUpInput): Promise<ActionResu
 }
 
 /** "Try without an account": Supabase anonymous sign-in. */
-export async function signInAsGuest(captchaToken?: string): Promise<ActionResult> {
+export async function signInAsGuest(captchaToken?: string, next?: string): Promise<ActionResult> {
   const token = typeof captchaToken === "string" && captchaToken.length > 0 ? captchaToken : undefined;
   if (captchaMissing(token)) return { ok: false, message: CAPTCHA_MISSING };
 
+  const destination = safeNextPath(next);
   const current = await getCurrentUser();
-  if (current) redirect("/app");
+  if (current) redirect(destination);
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInAnonymously(token ? { options: captchaOptions(token) } : undefined);
   if (error) return { ok: false, message: authMessage(error) };
 
-  redirect("/app");
+  redirect(destination);
 }
 
 export async function signOut(): Promise<void> {

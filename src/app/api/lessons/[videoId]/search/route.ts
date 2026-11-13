@@ -1,6 +1,6 @@
+import { withAiAccess } from "@/lib/ai/byok";
 import { handle, requireApiUser } from "@/lib/api";
 import { AppError, readJsonBody } from "@/lib/errors";
-import { consumeAiQuota } from "@/lib/quota";
 import { searchLecture } from "@/lib/search/service";
 import { SearchRequestSchema, SearchResponseSchema, YouTubeVideoId } from "@/types/contracts";
 
@@ -13,8 +13,8 @@ export async function POST(request: Request, ctx: RouteContext<"/api/lessons/[vi
     const id = YouTubeVideoId.safeParse((await ctx.params).videoId);
     if (!id.success) throw new AppError("not_found");
     const { query, language } = await readJsonBody(request, SearchRequestSchema);
-    await consumeAiQuota(user);
-    const body = SearchResponseSchema.parse(await searchLecture(user, id.data, language, query));
+    const result = await withAiAccess(user, () => searchLecture(user, id.data, language, query));
+    const body = SearchResponseSchema.parse(result);
     return Response.json(body, { headers: { "Cache-Control": "no-store" } });
   });
 }
