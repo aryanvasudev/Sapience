@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 
 import { MarkEmailReadIcon } from "@/components/icons";
+import { MorphText } from "@/components/motion/morph-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CaptchaError, useTurnstile } from "@/hooks/use-turnstile";
@@ -84,7 +85,7 @@ export function SignUpForm({ isGuest }: { isGuest: boolean }) {
         </p>
       ) : null}
       <Button type="submit" size="lg" disabled={pending}>
-        {pending ? "Creating your account…" : isGuest ? "Create account and keep progress" : "Create account"}
+        <MorphText>{pending ? "Creating your account…" : isGuest ? "Create account and keep progress" : "Create account"}</MorphText>
       </Button>
     </form>
   );

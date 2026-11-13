@@ -78,3 +78,8 @@ export { TocW400 as TocIcon } from "@material-symbols-svg/react/rounded/icons/to
 export { TranslateW400 as TranslateIcon } from "@material-symbols-svg/react/rounded/icons/translate";
 export { UpgradeW400 as UpgradeIcon } from "@material-symbols-svg/react/rounded/icons/upgrade";
 export { WarningW400 as WarningIcon } from "@material-symbols-svg/react/rounded/icons/warning";
+export { AddW400 as AddIcon } from "@material-symbols-svg/react/rounded/icons/add";
+export { ArrowOutwardW400 as ArrowOutwardIcon } from "@material-symbols-svg/react/rounded/icons/arrow-outward";
+export { AutoStoriesW400 as AutoStoriesIcon } from "@material-symbols-svg/react/rounded/icons/auto-stories";
+export { LeftPanelCloseW400 as LeftPanelCloseIcon } from "@material-symbols-svg/react/rounded/icons/left-panel-close";
+export { UnfoldMoreW400 as UnfoldMoreIcon } from "@material-symbols-svg/react/rounded/icons/unfold-more";

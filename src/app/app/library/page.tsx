@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import { PageHeader, SectionHeading } from "@/components/layout/page-header";
 import { ConceptList } from "@/features/library/components/concept-list";
 import { LessonList } from "@/features/library/components/lesson-list";
 import { requireUser } from "@/lib/auth";
@@ -10,11 +11,8 @@ export const metadata: Metadata = { title: "Library" };
 
 export default function LibraryPage() {
   return (
-    <div className="grid gap-12">
-      <header>
-        <h1 className="font-serif text-title font-medium">Library</h1>
-        <p className="mt-3 text-[0.9375rem] text-muted-foreground">Every lecture you&apos;ve opened and everything you&apos;ve saved.</p>
-      </header>
+    <div className="grid gap-10 md:gap-12">
+      <PageHeader title="Library" description="Every lecture you've opened and everything you've saved." />
       <Suspense fallback={<LibrarySkeleton />}>
         <LibraryLoader />
       </Suspense>
@@ -22,25 +20,28 @@ export default function LibraryPage() {
   );
 }
 
+const count = (n: number | undefined) =>
+  n ? <span className="font-mono text-[0.8125rem] text-faint tabular-nums">{n}</span> : undefined;
+
 async function LibraryLoader() {
   await requireUser("/app/library");
   const [lessons, concepts] = await Promise.all([listOpenedLessons(), listSavedConcepts()]);
 
   return (
-    <div className="grid gap-12 lg:grid-cols-2 lg:gap-10">
+    <div className="enter grid gap-12 [--i:1] lg:grid-cols-2 lg:gap-10">
       <section aria-labelledby="lessons-heading" className="min-w-0">
-        <h2 id="lessons-heading" className="font-serif text-xl font-medium">
+        <SectionHeading id="lessons-heading" meta={count(lessons?.length)}>
           Lessons
-          {lessons?.length ? <span className="ml-2 text-base text-muted-foreground tabular-nums">{lessons.length}</span> : null}
-        </h2>
+        </SectionHeading>
         <div className="mt-4">
           {lessons === null ? (
             <p role="alert" className="text-sm text-destructive">
               Couldn&apos;t load your lessons. Refresh the page to try again.
             </p>
           ) : lessons.length === 0 ? (
-            <div className="rounded-[14px] border border-dashed p-6">
-              <p className="text-[0.9375rem]">Lectures you open will show up here, with where you stopped.</p>
+            <div className="grid gap-1 rounded-2xl border border-dashed p-6">
+              <p className="text-[0.9375rem] font-medium">No lectures yet</p>
+              <p className="text-sm text-muted-foreground">Lectures you open show up here, with where you stopped.</p>
             </div>
           ) : (
             <LessonList lessons={lessons} />
@@ -49,10 +50,9 @@ async function LibraryLoader() {
       </section>
 
       <section aria-labelledby="concepts-heading" className="min-w-0">
-        <h2 id="concepts-heading" className="font-serif text-xl font-medium">
+        <SectionHeading id="concepts-heading" meta={count(concepts?.length)}>
           Saved concepts
-          {concepts?.length ? <span className="ml-2 text-base text-muted-foreground tabular-nums">{concepts.length}</span> : null}
-        </h2>
+        </SectionHeading>
         <div className="mt-4">
           {concepts === null ? (
             <p role="alert" className="text-sm text-destructive">
@@ -70,12 +70,22 @@ async function LibraryLoader() {
 function LibrarySkeleton() {
   return (
     <div aria-hidden className="grid gap-12 lg:grid-cols-2 lg:gap-10">
-      {[0, 1].map((i) => (
-        <div key={i} className="grid gap-4">
-          <div className="h-6 w-40 animate-pulse rounded bg-muted motion-reduce:animate-none" />
-          <div className="h-48 animate-pulse rounded-[14px] bg-muted motion-reduce:animate-none" />
-        </div>
-      ))}
+      <div className="grid content-start gap-3">
+        <div className="h-5 w-24 animate-pulse rounded bg-muted motion-reduce:animate-none" />
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="flex items-center gap-4 py-2.5">
+            <div className="aspect-video w-28 animate-pulse rounded-lg bg-muted motion-reduce:animate-none sm:w-36" />
+            <div className="grid flex-1 gap-2">
+              <div className="h-4 w-3/4 animate-pulse rounded bg-muted motion-reduce:animate-none" />
+              <div className="h-3 w-1/3 animate-pulse rounded bg-muted/70 motion-reduce:animate-none" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="grid content-start gap-3">
+        <div className="h-5 w-32 animate-pulse rounded bg-muted motion-reduce:animate-none" />
+        <div className="h-56 animate-pulse rounded-2xl bg-muted motion-reduce:animate-none" />
+      </div>
     </div>
   );
 }

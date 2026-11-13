@@ -77,17 +77,35 @@ async function LessonLoader({
   );
 }
 
+const PULSE = "animate-pulse bg-muted motion-reduce:animate-none";
+
+/** Mirrors the lesson screen: player, timeline, title and chapters; tabs and a panel on the right. */
 function LessonSkeleton() {
   return (
-    <div aria-hidden className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] lg:gap-8 xl:grid-cols-[minmax(0,1fr)_27rem]">
-      <div className="grid gap-5">
-        <div className="aspect-video animate-pulse rounded-xl bg-muted" />
-        <div className="h-7 w-2/3 animate-pulse rounded-md bg-muted" />
-        <div className="h-40 animate-pulse rounded-xl bg-muted" />
+    <div aria-hidden className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_25rem] xl:grid-cols-[minmax(0,1fr)_28rem]">
+      <div className="grid min-w-0 content-start gap-6">
+        <div className="-mx-4 md:mx-0">
+          <div className={`aspect-video md:rounded-2xl ${PULSE}`} />
+          <div className="mt-4 flex gap-1 px-4 md:px-0">
+            {[3, 5, 4, 6, 2].map((grow, i) => (
+              <div key={i} className={`h-1.5 rounded-full ${PULSE}`} style={{ flexGrow: grow }} />
+            ))}
+          </div>
+        </div>
+        <div className="grid gap-2.5">
+          <div className={`h-7 w-2/3 rounded-md ${PULSE}`} />
+          <div className="h-4 w-1/3 animate-pulse rounded bg-muted/70 motion-reduce:animate-none" />
+        </div>
+        <div className={`hidden h-56 rounded-2xl lg:block ${PULSE}`} />
       </div>
-      <div className="grid content-start gap-3">
-        <div className="h-5 w-1/2 animate-pulse rounded bg-muted" />
-        <div className="h-32 animate-pulse rounded-lg bg-muted" />
+      <div className="grid content-start gap-5">
+        <div className={`h-10 rounded-[10px] ${PULSE}`} />
+        <div className="grid gap-2.5">
+          <div className={`h-5 w-1/2 rounded ${PULSE}`} />
+          <div className="h-4 w-5/6 animate-pulse rounded bg-muted/70 motion-reduce:animate-none" />
+          <div className="h-4 w-2/3 animate-pulse rounded bg-muted/70 motion-reduce:animate-none" />
+        </div>
+        <div className={`h-32 rounded-2xl ${PULSE}`} />
       </div>
     </div>
   );

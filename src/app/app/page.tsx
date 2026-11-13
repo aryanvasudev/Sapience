@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import { PageHeader } from "@/components/layout/page-header";
 import { DashboardSections, DashboardSectionsSkeleton } from "@/features/dashboard/dashboard-sections";
 import { PasteBox } from "@/features/dashboard/paste-box";
 import { capabilities } from "@/lib/ai/provider";
@@ -12,19 +13,11 @@ export const metadata: Metadata = { title: "Home" };
 
 export default function DashboardPage() {
   return (
-    <div className="grid gap-14">
-      <section aria-labelledby="start-heading" className="max-w-[44rem]">
-        <h1
-          id="start-heading"
-          className="font-serif text-title font-medium"
-        >
-          Start a lesson
-        </h1>
-        <p className="mt-3 text-[0.9375rem] leading-relaxed text-muted-foreground">
-          Paste a link to a public YouTube lecture between 1 and 90 minutes long.
-        </p>
-        <div className="mt-6">
-          <Suspense fallback={<div aria-hidden className="h-14 animate-pulse rounded-[14px] bg-muted motion-reduce:animate-none" />}>
+    <div className="grid gap-12 md:gap-14">
+      <section id="start" aria-labelledby="start-heading" className="max-w-3xl scroll-mt-20">
+        <PageHeader id="start-heading" title="Start a lesson" description="Paste a lecture you're watching. Sapience splits it into chapters, writes the notes and asks a question after each chapter." />
+        <div className="enter mt-6 [--i:1]">
+          <Suspense fallback={<div aria-hidden className="h-[3.75rem] animate-pulse rounded-2xl bg-muted motion-reduce:animate-none" />}>
             <PasteBoxLoader />
           </Suspense>
         </div>

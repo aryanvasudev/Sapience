@@ -6,7 +6,8 @@
  */
 import { useId, useState, useTransition } from "react";
 
-import { ContentPasteIcon } from "@/components/icons";
+import { ContentPasteIcon, ProgressActivityIcon } from "@/components/icons";
+import { MorphText } from "@/components/motion/morph-text";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -68,8 +69,8 @@ export function TranscriptDialog({
       </DialogTrigger>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle className="font-serif text-xl font-medium">Build from the transcript</DialogTitle>
-          <DialogDescription className="leading-relaxed">
+          <DialogTitle className="text-lg font-medium tracking-[-0.01em]">Build from the transcript</DialogTitle>
+          <DialogDescription className="text-sm leading-relaxed">
             On YouTube, open the video&apos;s description, choose <strong className="font-medium text-foreground">Show transcript</strong>,
             select everything in the transcript panel and paste it below. The lesson is built from the words only, so
             anything written on the board won&apos;t be in the notes.
@@ -84,22 +85,23 @@ export function TranscriptDialog({
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={"0:00\nWelcome back. Today we start with…"}
-            className="h-56 resize-y font-mono text-[0.8125rem]"
+            className="h-56 resize-y rounded-[10px] font-mono text-[0.8125rem] placeholder:text-faint"
             aria-invalid={tooLong || undefined}
             aria-describedby={`${id}-hint`}
           />
-          <p id={`${id}-hint`} className={tooLong ? "text-sm text-destructive" : "text-sm text-muted-foreground"}>
+          <p id={`${id}-hint`} className={tooLong ? "text-[0.8125rem] text-destructive" : "text-[0.8125rem] text-faint"}>
             {tooLong ? "That's more than 200 KB. Paste a shorter transcript." : "Lines need their timestamps, like 1:05 or 1:02:03."}
           </p>
           {error ? (
-            <p role="alert" className="text-sm text-destructive">
+            <p role="alert" className="animate-fade text-sm text-destructive">
               {error}
             </p>
           ) : null}
         </div>
         <DialogFooter>
           <Button type="button" onClick={submit} disabled={pending || text.trim().length === 0 || tooLong}>
-            {pending ? "Starting…" : "Build lesson"}
+            {pending ? <ProgressActivityIcon className="animate-spin motion-reduce:animate-none" /> : null}
+            <MorphText>{pending ? "Starting…" : "Build lesson"}</MorphText>
           </Button>
         </DialogFooter>
       </DialogContent>

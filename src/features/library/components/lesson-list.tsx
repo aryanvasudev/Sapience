@@ -17,23 +17,26 @@ export function LessonList({ lessons }: { lessons: LessonRowData[] }) {
     <div className="grid gap-3">
       {lessons.length > 5 ? (
         <div className="relative">
-          <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4.5 -translate-y-1/2 text-muted-foreground" />
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4.5 -translate-y-1/2 text-faint" />
           <Input
             type="search"
             aria-label="Search lessons"
             placeholder="Search lessons"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="pl-9"
+            className="rounded-[10px] pl-9 placeholder:text-faint"
           />
         </div>
       ) : null}
       {visible.length === 0 ? (
-        <p className="rounded-[14px] border border-dashed p-6 text-sm text-muted-foreground">No lesson matches. Try other words.</p>
+        <div className="grid gap-1 rounded-2xl border border-dashed p-6">
+          <p className="text-[0.9375rem] font-medium">No lesson matches</p>
+          <p className="text-sm text-muted-foreground">Try other words from the title or channel.</p>
+        </div>
       ) : (
-        <ul className="divide-y overflow-hidden rounded-[14px] border bg-card">
+        <ul className="-mx-2.5 grid gap-0.5">
           {visible.map((l) => (
-            <li key={l.videoId}>
+            <li key={`${l.videoId}-${l.language}`}>
               <LessonRow item={l} />
             </li>
           ))}

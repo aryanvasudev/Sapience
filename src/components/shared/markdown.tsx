@@ -33,7 +33,7 @@ function MarkdownImpl({ children, className, onSeek, durationSeconds, inline }: 
       if (seconds !== null && onSeek) return <TimestampChip seconds={seconds} onSeek={onSeek} />;
       if (!href || !/^https?:\/\//.test(href)) return <span>{linkChildren}</span>;
       return (
-        <a href={href} target="_blank" rel="noopener noreferrer nofollow" className="text-primary underline decoration-foreground/30 underline-offset-4">
+        <a href={href} target="_blank" rel="noopener noreferrer nofollow" className="text-foreground underline decoration-foreground/30 underline-offset-4 transition-[text-decoration-color] duration-150 ease-(--ease-out) [@media(hover:hover)]:hover:decoration-foreground">
           {linkChildren}
         </a>
       );

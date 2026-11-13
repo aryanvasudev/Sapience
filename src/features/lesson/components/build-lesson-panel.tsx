@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { ArrowForwardIcon } from "@/components/icons";
+import { MorphText } from "@/components/motion/morph-text";
 import { Button } from "@/components/ui/button";
 import { OUTPUT_LANGUAGE_NAMES, type OutputLanguage } from "@/config/enums";
 import { requestJson } from "@/lib/client-api";
@@ -27,22 +29,21 @@ export function BuildLessonPanel({ videoId, language, title }: { videoId: string
   };
 
   return (
-    <section className="max-w-[36rem]">
-      <h1 className="font-serif text-[2rem] leading-tight font-medium tracking-[-0.015em]">
-        {title ?? "This lecture has no lesson yet"}
-      </h1>
-      <p className="mt-3 leading-relaxed text-muted-foreground">
+    <section className="enter max-w-[40rem]">
+      <h1 className="text-title font-semibold text-balance">{title ?? "This lecture has no lesson yet"}</h1>
+      <p className="mt-3 text-[0.9375rem] leading-relaxed text-muted-foreground">
         There&apos;s no {OUTPUT_LANGUAGE_NAMES[language]} lesson for this video yet. Building one counts toward today&apos;s
         limit; after that it&apos;s shared with every student.
       </p>
       {error ? (
-        <p role="alert" className="mt-4 text-sm text-destructive">
+        <p role="alert" className="mt-4 animate-fade text-sm text-destructive">
           {error}
         </p>
       ) : null}
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Button type="button" size="lg" onClick={build} disabled={pending}>
-          {pending ? "Starting…" : "Build this lesson"}
+      <div className="mt-7 flex flex-wrap gap-2">
+        <Button type="button" onClick={build} disabled={pending}>
+          <MorphText>{pending ? "Starting…" : "Build this lesson"}</MorphText>
+          {pending ? null : <ArrowForwardIcon data-icon="inline-end" />}
         </Button>
         <TranscriptDialog videoUrl={url} language={language} onCreated={() => router.refresh()} />
       </div>

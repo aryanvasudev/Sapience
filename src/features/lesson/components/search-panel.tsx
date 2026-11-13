@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { ProgressActivityIcon, SearchIcon } from "@/components/icons";
+import { MorphText } from "@/components/motion/morph-text";
 import { AiLabel } from "@/components/shared/ai-label";
 import { TimestampChip } from "@/components/shared/timestamp-chip";
 import { Button } from "@/components/ui/button";
@@ -52,7 +53,11 @@ export function SearchPanel({
   };
 
   if (readyCount === 0) {
-    return <p className="text-sm text-muted-foreground">Search works once the first chapter&apos;s notes are ready.</p>;
+    return (
+      <p className="rounded-2xl border border-dashed p-5 text-sm text-muted-foreground">
+        Search works once the first chapter&apos;s notes are ready.
+      </p>
+    );
   }
 
   return (
@@ -70,7 +75,7 @@ export function SearchPanel({
         </label>
         <div className="flex gap-2">
           <div className="relative min-w-0 flex-1">
-            <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4.5 -translate-y-1/2 text-muted-foreground" />
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4.5 -translate-y-1/2 text-faint" />
             <Input
               id="lecture-search"
               type="search"
@@ -78,30 +83,30 @@ export function SearchPanel({
               maxLength={200}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="A word, or a question in any language"
-              className="pl-8"
+              className="pl-9.5"
               autoComplete="off"
             />
           </div>
           <Button type="submit" variant="outline" disabled={query.trim().length < 2 || asking}>
             {asking ? <ProgressActivityIcon className="animate-spin motion-reduce:animate-none" /> : null}
-            Ask
+            <MorphText>{asking ? "Asking…" : "Ask"}</MorphText>
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-[0.8125rem] leading-relaxed text-faint">
           Matches show as you type. Ask finds where a question is answered, even across languages.
         </p>
       </form>
 
       {error ? (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="animate-fade text-sm text-destructive">
           {error}
         </p>
       ) : null}
 
       {asked && asked.query === query.trim() ? (
-        <section aria-label="Answers from Ask" className="grid gap-3">
+        <section aria-label="Answers from Ask" className="grid animate-fade gap-3">
           {asked.response.partial ? (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[0.8125rem] text-faint">
               Searched {asked.response.partial.searched} of {asked.response.partial.total} chapters (the rest are still building).
             </p>
           ) : null}
@@ -110,39 +115,39 @@ export function SearchPanel({
           ) : (
             <ol className="grid gap-2">
               {asked.response.results.map((r) => (
-                <li key={r.ref} className="grid gap-1.5 rounded-lg border border-foreground/10 bg-card p-3">
+                <li key={r.ref} className="grid gap-1.5 rounded-[10px] border bg-card p-3 dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.03)]">
                   <div className="flex items-center justify-between gap-3">
                     <p className="min-w-0 truncate text-sm font-medium">{r.label}</p>
                     <TimestampChip seconds={r.seconds} onSeek={jump} label={r.label} />
                   </div>
-                  {r.why ? <p className="text-sm">{r.why}</p> : null}
-                  {r.snippet ? <p className="text-xs text-muted-foreground">“{r.snippet}”</p> : null}
+                  {r.why ? <p className="text-sm leading-relaxed text-foreground/85">{r.why}</p> : null}
+                  {r.snippet ? <p className="text-[0.8125rem] leading-relaxed text-muted-foreground">“{r.snippet}”</p> : null}
                 </li>
               ))}
             </ol>
           )}
-          <AiLabel note="places are picked by AI; times come from the lesson" />
+          <AiLabel note="places are picked by AI; times come from the lesson" className="text-faint" />
         </section>
       ) : null}
 
       {query.trim().length >= 2 ? (
         <section aria-label="Matches" className="grid gap-2">
-          <h3 className="text-xs text-muted-foreground" aria-live="polite">
+          <h3 className="text-[0.8125rem] text-muted-foreground" aria-live="polite">
             {hits.length === 0 ? "Nothing in this lecture matches. Try different words, or Ask to search by meaning." : `${hits.length === 20 ? "20+" : hits.length} ${hits.length === 1 ? "match" : "matches"}`}
           </h3>
-          <ul className="grid divide-y divide-foreground/8">
+          <ul className="-mx-2.5 grid gap-0.5">
             {hits.map((h) => (
               <li key={`${h.kind}-${h.ref}`}>
                 <button
                   type="button"
                   onClick={() => jump(h.seconds)}
-                  className="grid w-full gap-0.5 rounded-md px-1 py-2 text-left transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-ring [@media(hover:hover)]:hover:bg-muted/60"
+                  className="grid w-full gap-0.5 rounded-[10px] px-2.5 py-2 text-left transition-colors duration-150 ease-(--ease-out) focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring [@media(hover:hover)]:hover:bg-muted/60"
                 >
                   <span className="flex items-center justify-between gap-3 text-sm">
                     <span className="min-w-0 truncate">{h.label}</span>
-                    <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{formatTimestamp(h.seconds)}</span>
+                    <span className="shrink-0 font-mono text-[0.75rem] text-faint tabular-nums">{formatTimestamp(h.seconds)}</span>
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="line-clamp-2 text-[0.75rem] leading-snug text-faint">
                     {KIND_LABEL[h.kind]}
                     {h.snippet ? ` · ${h.snippet}` : ""}
                   </span>

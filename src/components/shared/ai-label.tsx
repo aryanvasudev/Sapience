@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
  */
 export function AiLabel({ note, fixture, className }: { note?: string; fixture?: boolean; className?: string }) {
   return (
-    <p className={cn("text-xs text-muted-foreground", className)}>
+    <p className={cn("text-xs text-faint", className)}>
       {fixture ? "Test fixture · hand-written, not AI-generated" : `AI-generated · may contain errors${note ? ` · ${note}` : ""}`}
     </p>
   );

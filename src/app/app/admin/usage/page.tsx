@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 
+import { PageHeader, SectionHeading } from "@/components/layout/page-header";
+import { CountUp } from "@/components/motion/count-up";
 import { isAdmin, usageReport, USAGE_WINDOW_DAYS } from "@/lib/admin/usage";
 import { perCall, type Bucket } from "@/lib/admin/summarize";
 import { requireUser } from "@/lib/auth";
 import { formatDuration } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Usage", robots: { index: false } };
 
@@ -13,19 +16,26 @@ const n = new Intl.NumberFormat("en-IN");
 const fmt = (v: number | null) => (v === null ? "–" : n.format(v));
 const secs = (ms: number | null) => (ms === null ? "–" : `${(ms / 1000).toFixed(1)} s`);
 const pct = (part: number, whole: number) => (whole === 0 ? "–" : `${Math.round((part / whole) * 100)}%`);
+const pctValue = (part: number, whole: number) => (whole === 0 ? null : Math.round((part / whole) * 100));
+
+const CARD = "rounded-2xl border bg-card dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]";
+const TH = "h-9 px-4 text-xs font-normal whitespace-nowrap text-muted-foreground";
+const TD = "h-10 px-4 font-mono text-[0.8125rem] whitespace-nowrap tabular-nums";
 
 /** P1 admin page (Section 3.2): real per-lesson token and time numbers from `ai_calls`. */
 export default function UsagePage() {
   return (
     <div className="grid gap-10">
-      <header className="grid gap-2">
-        <h1 className="font-serif text-title font-medium">Usage</h1>
-        <p className="text-[0.9375rem] text-muted-foreground">
-          Every AI call from the last {USAGE_WINDOW_DAYS} days, from <code className="font-mono text-sm">ai_calls</code>. Admins
-          only.
-        </p>
-      </header>
-      <Suspense fallback={<div aria-hidden className="h-96 animate-pulse rounded-xl bg-muted motion-reduce:animate-none" />}>
+      <PageHeader
+        title="Usage"
+        description={
+          <>
+            Every AI call from the last <span className="font-mono tabular-nums">{USAGE_WINDOW_DAYS}</span> days, from{" "}
+            <code className="font-mono text-[0.8125rem] text-foreground">ai_calls</code>. Admins only.
+          </>
+        }
+      />
+      <Suspense fallback={<UsageSkeleton />}>
         <UsageLoader />
       </Suspense>
     </div>
@@ -44,111 +54,163 @@ async function UsageLoader() {
     );
   }
   const { total } = report;
-  if (total.calls === 0) return <p className="text-sm text-muted-foreground">No AI calls in this period yet.</p>;
+  if (total.calls === 0) {
+    return (
+      <div className="enter grid max-w-xl gap-1 rounded-2xl border border-dashed p-6 [--i:1]">
+        <p className="text-[0.9375rem] font-medium">No AI calls in this period yet.</p>
+        <p className="text-sm text-muted-foreground">Build a lesson or ask the tutor and the calls show up here.</p>
+      </div>
+    );
+  }
+
+  const lessonRows = report.byLesson.slice(0, 50);
 
   return (
-    <div className="grid gap-12">
-      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="AI calls" value={fmt(total.calls)} />
-        <Stat label="Succeeded" value={pct(total.ok, total.calls)} />
-        <Stat label="Tokens in / out" value={`${fmt(total.inputTokens)} / ${fmt(total.outputTokens)}`} />
-        <Stat label="On students' own keys" value={pct(total.byok, total.calls)} />
-      </dl>
-      {report.truncated ? <p className="text-sm text-muted-foreground">Showing the most recent 20,000 calls only.</p> : null}
+    <div className="enter grid gap-12 [--i:1]">
+      <div className="grid gap-3">
+        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border bg-border lg:grid-cols-4">
+          <Stat label="AI calls">
+            <CountUp value={total.calls} />
+          </Stat>
+          <Stat label="Succeeded">
+            <Percent value={pctValue(total.ok, total.calls)} />
+          </Stat>
+          <Stat label="Tokens in / out">
+            <CountUp value={total.inputTokens} />
+            <span className="text-faint"> / </span>
+            <CountUp value={total.outputTokens} />
+          </Stat>
+          <Stat label="On students' own keys">
+            <Percent value={pctValue(total.byok, total.calls)} />
+          </Stat>
+        </dl>
+        {report.truncated ? <p className="text-[0.8125rem] text-faint">Showing the most recent 20,000 calls only.</p> : null}
+      </div>
 
-      <BucketTable title="By call kind" rows={report.byKind} label={(b) => b.key} />
-      <BucketTable title="By model" rows={report.byModel} label={(b) => b.key} />
+      <BucketTable id="by-kind" title="By call kind" rows={report.byKind} label={(b) => b.key} />
+      <BucketTable id="by-model" title="By model" rows={report.byModel} label={(b) => b.key} />
 
       <section aria-labelledby="lessons-usage" className="grid gap-3">
-        <h2 id="lessons-usage" className="font-serif text-xl font-medium">
-          Lesson builds
-        </h2>
-        <p className="text-sm text-muted-foreground">Outline, chapter, full and transcript calls per lesson. Time is the sum of model call times.</p>
-        <div className="overflow-x-auto rounded-lg border">
-          <table className="w-full min-w-[44rem] text-sm">
-            <thead className="bg-muted/60 text-left text-muted-foreground">
+        <div className="grid gap-1">
+          <SectionHeading
+            id="lessons-usage"
+            meta={<span className="font-mono text-[0.75rem] tabular-nums">{lessonRows.length}</span>}
+          >
+            Lesson builds
+          </SectionHeading>
+          <p className="text-[0.8125rem] text-muted-foreground">
+            Outline, chapter, full and transcript calls per lesson. Time is the sum of model call times.
+          </p>
+        </div>
+        <TableFrame>
+          <table className="w-full min-w-[46rem] border-collapse text-sm">
+            <thead className="border-b bg-surface/50 text-left">
               <tr>
-                <th className="px-3 py-2 font-medium">Lecture</th>
-                <th className="px-3 py-2 font-medium">Length</th>
-                <th className="px-3 py-2 text-right font-medium">Calls</th>
-                <th className="px-3 py-2 text-right font-medium">Tokens in</th>
-                <th className="px-3 py-2 text-right font-medium">Tokens out</th>
-                <th className="px-3 py-2 text-right font-medium">Model time</th>
-                <th className="px-3 py-2 text-right font-medium">In / video min</th>
+                <th className={TH}>Lecture</th>
+                <th className={TH}>Length</th>
+                <th className={cn(TH, "text-right")}>Calls</th>
+                <th className={cn(TH, "text-right")}>Tokens in</th>
+                <th className={cn(TH, "text-right")}>Tokens out</th>
+                <th className={cn(TH, "text-right")}>Model time</th>
+                <th className={cn(TH, "text-right")}>In / video min</th>
               </tr>
             </thead>
             <tbody className="divide-y">
-              {report.byLesson.slice(0, 50).map((b) => {
+              {lessonRows.map((b) => {
                 const lesson = report.lessons.get(b.key);
                 const minutes = lesson ? lesson.durationSeconds / 60 : 0;
                 return (
-                  <tr key={b.key}>
-                    <td className="max-w-[18rem] px-3 py-2">
-                      <span className="line-clamp-1">{lesson?.title ?? b.key}</span>
+                  <tr key={b.key} className="transition-colors duration-150 ease-(--ease-out) [@media(hover:hover)]:hover:bg-raised/50">
+                    <td className="max-w-[20rem] px-4 py-2">
+                      <span className="line-clamp-1 font-medium">{lesson?.title ?? b.key}</span>
                       {lesson ? (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="block text-xs text-muted-foreground">
                           {lesson.language} · {lesson.source}
                         </span>
                       ) : null}
                     </td>
-                    <td className="px-3 py-2 tabular-nums">{lesson ? formatDuration(lesson.durationSeconds) : "–"}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{fmt(b.calls)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{fmt(b.inputTokens)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{fmt(b.outputTokens)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{secs(b.durationMs)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{minutes > 0 ? fmt(Math.round(b.inputTokens / minutes)) : "–"}</td>
+                    <td className={cn(TD, "text-muted-foreground")}>{lesson ? formatDuration(lesson.durationSeconds) : "–"}</td>
+                    <td className={cn(TD, "text-right")}>{fmt(b.calls)}</td>
+                    <td className={cn(TD, "text-right")}>{fmt(b.inputTokens)}</td>
+                    <td className={cn(TD, "text-right")}>{fmt(b.outputTokens)}</td>
+                    <td className={cn(TD, "text-right")}>{secs(b.durationMs)}</td>
+                    <td className={cn(TD, "text-right")}>{minutes > 0 ? fmt(Math.round(b.inputTokens / minutes)) : "–"}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-        </div>
+        </TableFrame>
       </section>
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="grid gap-1 rounded-lg border bg-card p-4">
-      <dt className="text-sm text-muted-foreground">{label}</dt>
-      <dd className="font-serif text-2xl font-medium tabular-nums">{value}</dd>
+    <div className="grid content-start gap-1.5 bg-card p-4 sm:p-5">
+      <dt className="order-2 text-xs text-muted-foreground">{label}</dt>
+      <dd className="order-1 text-xl leading-tight font-semibold tracking-[-0.02em] break-words tabular-nums sm:text-2xl">
+        {children}
+      </dd>
     </div>
   );
 }
 
-function BucketTable({ title, rows, label }: { title: string; rows: Bucket[]; label: (b: Bucket) => string }) {
+function Percent({ value }: { value: number | null }) {
+  return value === null ? <>–</> : <CountUp value={value} suffix="%" />;
+}
+
+function TableFrame({ children }: { children: ReactNode }) {
+  return <div className={cn(CARD, "overflow-x-auto")}>{children}</div>;
+}
+
+function BucketTable({ id, title, rows, label }: { id: string; title: string; rows: Bucket[]; label: (b: Bucket) => string }) {
   return (
-    <section className="grid gap-3">
-      <h2 className="font-serif text-xl font-medium">{title}</h2>
-      <div className="overflow-x-auto rounded-lg border">
-        <table className="w-full min-w-[40rem] text-sm">
-          <thead className="bg-muted/60 text-left text-muted-foreground">
+    <section aria-labelledby={id} className="grid gap-3">
+      <SectionHeading id={id} meta={<span className="font-mono text-[0.75rem] tabular-nums">{rows.length}</span>}>
+        {title}
+      </SectionHeading>
+      <TableFrame>
+        <table className="w-full min-w-[40rem] border-collapse text-sm">
+          <thead className="border-b bg-surface/50 text-left">
             <tr>
-              <th className="px-3 py-2 font-medium">{title.replace("By ", "")}</th>
-              <th className="px-3 py-2 text-right font-medium">Calls</th>
-              <th className="px-3 py-2 text-right font-medium">OK</th>
-              <th className="px-3 py-2 text-right font-medium">Fell back</th>
-              <th className="px-3 py-2 text-right font-medium">Avg in</th>
-              <th className="px-3 py-2 text-right font-medium">Avg out</th>
-              <th className="px-3 py-2 text-right font-medium">Avg time</th>
+              <th className={TH}>{title.replace("By ", "").replace(/^./, (c) => c.toUpperCase())}</th>
+              <th className={cn(TH, "text-right")}>Calls</th>
+              <th className={cn(TH, "text-right")}>OK</th>
+              <th className={cn(TH, "text-right")}>Fell back</th>
+              <th className={cn(TH, "text-right")}>Avg in</th>
+              <th className={cn(TH, "text-right")}>Avg out</th>
+              <th className={cn(TH, "text-right")}>Avg time</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {rows.map((b) => (
-              <tr key={b.key}>
-                <td className="px-3 py-2 font-mono text-xs">{label(b)}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{fmt(b.calls)}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{pct(b.ok, b.calls)}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{fmt(b.fallbacks)}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{fmt(perCall(b, "inputTokens"))}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{fmt(perCall(b, "outputTokens"))}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{secs(perCall(b, "durationMs"))}</td>
+              <tr key={b.key} className="transition-colors duration-150 ease-(--ease-out) [@media(hover:hover)]:hover:bg-raised/50">
+                <td className={cn(TD, "text-xs")}>{label(b)}</td>
+                <td className={cn(TD, "text-right")}>{fmt(b.calls)}</td>
+                <td className={cn(TD, "text-right")}>{pct(b.ok, b.calls)}</td>
+                <td className={cn(TD, "text-right", b.fallbacks === 0 && "text-faint")}>{fmt(b.fallbacks)}</td>
+                <td className={cn(TD, "text-right")}>{fmt(perCall(b, "inputTokens"))}</td>
+                <td className={cn(TD, "text-right")}>{fmt(perCall(b, "outputTokens"))}</td>
+                <td className={cn(TD, "text-right")}>{secs(perCall(b, "durationMs"))}</td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
+      </TableFrame>
     </section>
+  );
+}
+
+function UsageSkeleton() {
+  return (
+    <div aria-hidden className="grid gap-12">
+      <div className="h-[5.5rem] animate-pulse rounded-2xl bg-muted motion-reduce:animate-none" />
+      <div className="grid gap-3">
+        <div className="h-5 w-32 animate-pulse rounded bg-muted motion-reduce:animate-none" />
+        <div className="h-56 animate-pulse rounded-2xl bg-muted/70 motion-reduce:animate-none" />
+      </div>
+    </div>
   );
 }

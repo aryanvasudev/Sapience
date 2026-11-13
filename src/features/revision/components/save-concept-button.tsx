@@ -5,6 +5,7 @@ import { useState } from "react";
 import { BookmarkAddedIcon, BookmarkAddIcon, ProgressActivityIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { requestJson } from "@/lib/client-api";
+import { cn } from "@/lib/utils";
 import { CreateConceptResponseSchema, type CreateConceptRequest } from "@/types/contracts";
 
 /**
@@ -32,8 +33,14 @@ export function SaveConceptButton({
 
   if (state.kind === "saved") {
     return (
-      <p role="status" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-        <BookmarkAddedIcon className="size-4.5 text-foreground" />
+      <p
+        role="status"
+        className={cn(
+          "inline-flex animate-fade items-center gap-1.5 text-muted-foreground",
+          size === "xs" ? "h-6 text-xs" : "h-7 text-[0.8125rem]",
+        )}
+      >
+        <BookmarkAddedIcon className={cn("shrink-0 text-foreground", size === "xs" ? "size-3.5" : "size-4")} />
         Saved · first review tomorrow
       </p>
     );
@@ -45,7 +52,7 @@ export function SaveConceptButton({
         {label}
       </Button>
       {state.kind === "error" ? (
-        <span role="alert" className="text-sm text-destructive">
+        <span role="alert" className="animate-fade text-[0.8125rem] text-destructive">
           {state.message}
         </span>
       ) : null}

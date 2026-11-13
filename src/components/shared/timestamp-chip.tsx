@@ -18,8 +18,9 @@ export function TimestampChip({
 }) {
   const text = formatTimestamp(seconds);
   const classes = cn(
-    "inline-flex h-6 items-center rounded-md bg-highlight/70 px-1.5 align-baseline font-mono text-[0.8125rem] leading-none text-highlight-foreground tabular-nums dark:bg-highlight/85",
-    onSeek && "transition-colors duration-150 ease-(--ease-out) [@media(hover:hover)]:hover:bg-highlight focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
+    "inline-flex h-5 shrink-0 items-center rounded-[5px] border bg-surface px-1.5 align-baseline font-mono text-[0.75rem] leading-none text-muted-foreground tabular-nums",
+    onSeek &&
+      "cursor-pointer transition-[background-color,border-color,color] duration-150 ease-(--ease-out) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring [@media(hover:hover)]:hover:border-foreground/20 [@media(hover:hover)]:hover:bg-raised [@media(hover:hover)]:hover:text-foreground",
     className,
   );
   if (!onSeek) return <span className={classes}>{text}</span>;

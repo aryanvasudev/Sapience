@@ -1,7 +1,9 @@
 import Link from "next/link";
 
-import { EventRepeatIcon } from "@/components/icons";
-import { LessonRow } from "@/components/shared/lesson-row";
+import { ArrowForwardIcon, EventRepeatIcon } from "@/components/icons";
+import { SectionHeading } from "@/components/layout/page-header";
+import { CountUp } from "@/components/motion/count-up";
+import { LessonCard, LessonRow } from "@/components/shared/lesson-row";
 import { Button } from "@/components/ui/button";
 import { OUTPUT_LANGUAGES, type OutputLanguage } from "@/config/enums";
 import { requireUser } from "@/lib/auth";
@@ -81,6 +83,7 @@ async function studyStats(): Promise<StudyStats | null> {
   };
 }
 
+
 /** The rendered sections, separate from the queries so the layout can be previewed with sample rows. */
 export function DashboardSectionsView({
   items,
@@ -97,112 +100,126 @@ export function DashboardSectionsView({
 }) {
   const opened = new Set(items.map((i) => `${i.videoId}:${i.language}`));
   const fresh = featured.filter((f) => !opened.has(`${f.videoId}:${f.language}`));
+  const showStats = stats !== null && stats.answered + stats.conceptsSaved + stats.reviewsDone > 0;
   return (
-    <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-16">
+    <div className="enter grid gap-10 [--i:2] lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-12">
       <div className="grid min-w-0 content-start gap-12">
-      <section aria-labelledby="continue-heading">
-        <h2 id="continue-heading" className="font-serif text-xl font-medium">
-          Continue learning
-        </h2>
-        {loadFailed ? (
-          <p role="alert" className="mt-4 text-sm text-destructive">
-            Couldn&apos;t load your lessons. Refresh the page to try again.
-          </p>
-        ) : items.length === 0 ? (
-          <div className="mt-4 rounded-[14px] border border-dashed p-6">
-            <p className="text-[0.9375rem]">Lectures you open will show up here, with where you stopped.</p>
-          </div>
-        ) : (
-          <ul className="mt-4 divide-y overflow-hidden rounded-[14px] border bg-card">
-            {items.map((item) => (
-              <li key={item.videoId}>
-                <LessonRow item={item} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {fresh.length ? (
-        <section aria-labelledby="featured-heading">
-          <h2 id="featured-heading" className="font-serif text-xl font-medium">
-            Ready to open
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">Already built, so they open straight away and don&apos;t use your daily lesson.</p>
-          <ul className="mt-4 divide-y overflow-hidden rounded-[14px] border bg-card">
-            {fresh.map((item) => (
-              <li key={`${item.videoId}-${item.language}`}>
-                <LessonRow item={item} />
-              </li>
-            ))}
-          </ul>
+        <section aria-labelledby="continue-heading">
+          <SectionHeading id="continue-heading" meta={items.length > 0 ? `${items.length} recent` : undefined}>
+            Continue learning
+          </SectionHeading>
+          {loadFailed ? (
+            <p role="alert" className="mt-4 text-sm text-destructive">
+              Couldn&apos;t load your lessons. Refresh the page to try again.
+            </p>
+          ) : items.length === 0 ? (
+            <div className="mt-4 grid place-items-start gap-1 rounded-2xl border border-dashed p-6">
+              <p className="text-[0.9375rem] font-medium">No lectures yet</p>
+              <p className="text-sm text-muted-foreground">Lectures you open show up here, with where you stopped.</p>
+            </div>
+          ) : (
+            <ul className="mt-3 -mx-2.5 grid gap-0.5">
+              {items.map((item) => (
+                <li key={item.videoId}>
+                  <LessonRow item={item} />
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
-      ) : null}
+
+        {fresh.length ? (
+          <section aria-labelledby="featured-heading">
+            <SectionHeading id="featured-heading">Ready to open</SectionHeading>
+            <p className="mt-1 text-[0.8125rem] text-muted-foreground">
+              Already built, so they open straight away and don&apos;t use your daily lesson.
+            </p>
+            <ul className="mt-5 grid gap-x-5 gap-y-7 sm:grid-cols-2 xl:grid-cols-3">
+              {fresh.map((item) => (
+                <li key={`${item.videoId}-${item.language}`}>
+                  <LessonCard item={item} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
       </div>
 
-      <div className="grid content-start gap-12">
-      <section aria-labelledby="revision-heading">
-        <h2 id="revision-heading" className="font-serif text-xl font-medium">
-          Revision
-        </h2>
-        <div className="mt-4 rounded-[14px] border bg-card p-5">
-          <p className="flex items-baseline gap-2">
-            <span className="font-serif text-[2rem] leading-none font-medium tabular-nums">{loadFailed ? "–" : dueCount}</span>
-            <span className="text-sm text-muted-foreground">{dueCount === 1 ? "concept due" : "concepts due"}</span>
-          </p>
-          {dueCount === 0 || loadFailed ? (
-            <p className="mt-3 flex gap-2 text-sm text-muted-foreground">
-              <EventRepeatIcon className="mt-px size-4.5 shrink-0" />
-              Nothing to review. Questions you save from a lesson come back here on a spaced schedule.
+      <div className="grid content-start gap-10">
+        <section aria-labelledby="revision-heading">
+          <SectionHeading id="revision-heading">Revision</SectionHeading>
+          <div className="mt-3 rounded-2xl border bg-card p-5 dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.03)]">
+            <p className="flex items-baseline gap-2">
+              <span className="text-[2.25rem] leading-none font-semibold tracking-[-0.03em] tabular-nums">
+                {loadFailed ? "–" : <CountUp value={dueCount} />}
+              </span>
+              <span className="text-sm text-muted-foreground">{dueCount === 1 ? "concept due" : "concepts due"}</span>
             </p>
-          ) : (
-            <Button asChild className="mt-4 w-full">
-              <Link href="/app/revision?start=1">Start revision</Link>
-            </Button>
-          )}
-        </div>
-      </section>
-
-      {stats && stats.answered + stats.conceptsSaved + stats.reviewsDone > 0 ? (
-        <section aria-labelledby="stats-heading">
-          <h2 id="stats-heading" className="font-serif text-xl font-medium">
-            Your study
-          </h2>
-          <dl className="mt-4 grid grid-cols-2 gap-3">
-            <StatTile label="Checkpoints answered" value={stats.answered} />
-            <StatTile
-              label="Right first time"
-              value={stats.answered ? `${Math.round((stats.firstTryCorrect / stats.answered) * 100)}%` : "–"}
-            />
-            <StatTile label="Concepts saved" value={stats.conceptsSaved} />
-            <StatTile label="Reviews done" value={stats.reviewsDone} />
-          </dl>
+            {dueCount === 0 || loadFailed ? (
+              <p className="mt-4 flex gap-2.5 border-t pt-4 text-[0.8125rem] leading-relaxed text-muted-foreground">
+                <EventRepeatIcon className="mt-px size-4.5 shrink-0 text-faint" />
+                Nothing to review. Questions you save from a lesson come back here on a spaced schedule.
+              </p>
+            ) : (
+              <Button asChild className="mt-5 w-full">
+                <Link href="/app/revision?start=1">
+                  Start revision
+                  <ArrowForwardIcon data-icon="inline-end" />
+                </Link>
+              </Button>
+            )}
+          </div>
         </section>
-      ) : null}
+
+        {showStats && stats ? (
+          <section aria-labelledby="stats-heading">
+            <SectionHeading id="stats-heading">Your study</SectionHeading>
+            <dl className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border bg-border">
+              <StatTile label="Checkpoints answered" value={stats.answered} />
+              <StatTile
+                label="Right first time"
+                value={stats.answered ? Math.round((stats.firstTryCorrect / stats.answered) * 100) : null}
+                suffix="%"
+              />
+              <StatTile label="Concepts saved" value={stats.conceptsSaved} />
+              <StatTile label="Reviews done" value={stats.reviewsDone} />
+            </dl>
+          </section>
+        ) : null}
       </div>
     </div>
   );
 }
 
-function StatTile({ label, value }: { label: string; value: number | string }) {
+function StatTile({ label, value, suffix = "" }: { label: string; value: number | null; suffix?: string }) {
   return (
-    <div className="grid gap-0.5 rounded-[14px] border bg-card p-4">
+    <div className="grid gap-1.5 bg-card p-4">
       <dt className="order-2 text-xs text-muted-foreground">{label}</dt>
-      <dd className="order-1 font-serif text-2xl leading-none font-medium tabular-nums">{value}</dd>
+      <dd className="order-1 text-2xl leading-none font-semibold tracking-[-0.02em] tabular-nums">
+        {value === null ? "–" : <CountUp value={value} suffix={suffix} />}
+      </dd>
     </div>
   );
 }
 
 export function DashboardSectionsSkeleton() {
   return (
-    <div aria-hidden className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-16">
-      <div className="grid gap-4">
-        <div className="h-6 w-48 animate-pulse rounded bg-muted motion-reduce:animate-none" />
-        <div className="h-24 animate-pulse rounded-[14px] bg-muted motion-reduce:animate-none" />
+    <div aria-hidden className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-12">
+      <div className="grid content-start gap-3">
+        <div className="h-5 w-40 animate-pulse rounded bg-muted motion-reduce:animate-none" />
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="flex items-center gap-4 p-2.5">
+            <div className="aspect-video w-36 animate-pulse rounded-lg bg-muted motion-reduce:animate-none" />
+            <div className="grid flex-1 gap-2">
+              <div className="h-4 w-3/4 animate-pulse rounded bg-muted motion-reduce:animate-none" />
+              <div className="h-3 w-1/3 animate-pulse rounded bg-muted/70 motion-reduce:animate-none" />
+            </div>
+          </div>
+        ))}
       </div>
-      <div className="grid gap-4">
-        <div className="h-6 w-28 animate-pulse rounded bg-muted motion-reduce:animate-none" />
-        <div className="h-32 animate-pulse rounded-[14px] bg-muted motion-reduce:animate-none" />
+      <div className="grid content-start gap-3">
+        <div className="h-5 w-24 animate-pulse rounded bg-muted motion-reduce:animate-none" />
+        <div className="h-36 animate-pulse rounded-2xl bg-muted motion-reduce:animate-none" />
       </div>
     </div>
   );

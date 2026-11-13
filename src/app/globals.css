@@ -5,11 +5,13 @@
 /*
  * Sapience design tokens.
  *
- * Monochrome: ink on paper in the light theme, chalk on a near-black board in the dark one. Every
- * neutral carries a trace of blue so the single accent, sapphire, belongs to the same family.
- * Sapphire is spent sparingly: the playhead, progress, the current chapter, selection, links and
- * focus. Primary buttons are ink (black on light, white on dark), so sapphire never has to shout.
- * `--margin` (red) is reserved for wrong answers and warnings.
+ * A dark lecture hall: near-black slate, chalk-white type, and one highlighter-yellow accent. The
+ * neutrals are graphite (no hue), so the accent is the only colour on screen. It is spent on the
+ * checkpoint diamond, the playhead, progress, the current selection and focus, never on surfaces.
+ * Primary buttons are chalk on dark and ink on light. `--margin` (red) is reserved for wrong
+ * answers and errors, `--positive` for right answers.
+ *
+ * Type: Geist for everything, Geist Mono for timestamps, counts and figures.
  */
 
 @custom-variant dark (&:is(.dark *));
@@ -17,32 +19,38 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-literata), ui-serif, Georgia, serif;
-  --font-heading: var(--font-literata), ui-serif, Georgia, serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  /* Kept so older class names resolve; there is no serif in the system any more. */
+  --font-serif: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* Type scale for serif headings. Weight is always 500 (font-medium); size carries hierarchy. */
-  --text-display: clamp(2.375rem, 1.7rem + 2.6vw, 3.5rem);
-  --text-display--line-height: 1.04;
-  --text-display--letter-spacing: -0.03em;
-  --text-title: clamp(2rem, 1.7rem + 1.2vw, 2.5rem);
+  /* Type scale. Weight is 500 at most for headings; size and colour carry hierarchy. */
+  --text-display: clamp(2.5rem, 1.6rem + 3.6vw, 4.5rem);
+  --text-display--line-height: 1.02;
+  --text-display--letter-spacing: -0.035em;
+  --text-title: clamp(1.75rem, 1.5rem + 0.9vw, 2.25rem);
   --text-title--line-height: 1.12;
-  --text-title--letter-spacing: -0.02em;
-  --text-heading: clamp(1.625rem, 1.4rem + 0.9vw, 2.125rem);
-  --text-heading--line-height: 1.15;
-  --text-heading--letter-spacing: -0.015em;
+  --text-title--letter-spacing: -0.025em;
+  --text-heading: clamp(1.75rem, 1.4rem + 1.4vw, 2.75rem);
+  --text-heading--line-height: 1.08;
+  --text-heading--letter-spacing: -0.03em;
 
   --color-paper: var(--paper);
   --color-margin: var(--margin);
+  --color-positive: var(--positive);
   --color-highlight: var(--highlight);
   --color-highlight-foreground: var(--highlight-foreground);
   --color-rule: var(--rule);
   --color-board: var(--board);
   --color-chalk: var(--chalk);
   --color-chalk-muted: var(--chalk-muted);
-  --color-sapphire: var(--sapphire);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-foreground: var(--brand-foreground);
   --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-faint: var(--faint);
 
   --color-ring: var(--ring);
   --color-input: var(--input);
@@ -74,7 +82,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Radius by size: controls 8–10, cards 14, panels 18. Nested radius = outer − padding. */
+  /* Radius by size: controls 8, cards 12, panels 16. Nested radius = outer − padding. */
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -82,112 +90,125 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  --animate-enter: enter 560ms var(--ease-out) both;
+  --animate-fade: fade 400ms var(--ease-out) both;
 }
 
 :root {
   /* Ink on paper */
-  --paper: #fbfbfc;
-  --background: #fbfbfc;
-  --surface: #f4f5f7;
-  --foreground: #0d0f14;
+  --paper: #fafafa;
+  --background: #fafafa;
+  --surface: #f4f4f5;
+  --raised: #f0f0f1;
+  --foreground: #111113;
   --card: #ffffff;
-  --card-foreground: #0d0f14;
+  --card-foreground: #111113;
   --popover: #ffffff;
-  --popover-foreground: #0d0f14;
-  --sapphire: #1f4fd1;
-  --primary: #1f4fd1;
+  --popover-foreground: #111113;
+  --brand: #c08f00;
+  --brand-ink: #7a5900;
+  --brand-foreground: #111113;
+  --primary: #111113;
   --primary-foreground: #ffffff;
-  --secondary: #f1f2f5;
-  --secondary-foreground: #0d0f14;
-  --muted: #f1f2f5;
-  --muted-foreground: #5d6270;
-  --accent: #edf1fd;
-  --accent-foreground: #1a3fa8;
-  --destructive: #c42b3c;
-  --border: #e3e5ea;
-  --input: #d4d7de;
-  --ring: #1f4fd1;
-  --rule: #e3e5ea;
-  --margin: #c8364b;
-  --highlight: #d6e0ff;
-  --highlight-foreground: #0d0f14;
-  --board: #14161b;
-  --chalk: #eef0f4;
-  --chalk-muted: #9ba1ae;
+  --secondary: #f0f0f1;
+  --secondary-foreground: #111113;
+  --muted: #f0f0f1;
+  --muted-foreground: #5e5e66;
+  --faint: #7a7a82;
+  --accent: #ececee;
+  --accent-foreground: #111113;
+  --destructive: #d42a3a;
+  --positive: #15803d;
+  --border: rgb(17 17 19 / 0.09);
+  --input: rgb(17 17 19 / 0.14);
+  --ring: #c08f00;
+  --rule: rgb(17 17 19 / 0.07);
+  --margin: #d42a3a;
+  --highlight: #fbe58c;
+  --highlight-foreground: #111113;
+  --board: #141416;
+  --chalk: #efeff1;
+  --chalk-muted: #9c9ca4;
   --radius: 0.625rem;
 
-  /* The marketing shader reads these (Threads lines and their frayed ends). */
-  --shader-ink: #0d0f14;
-  --shader-accent: #1f4fd1;
+  /* The marketing shaders read these. */
+  --shader-ink: #111113;
+  --shader-accent: #c08f00;
 
   /* Motion: one ease-out curve for UI (unslop tokens / Emil Kowalski), one for on-screen movement. */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 
-  --chart-1: #1f4fd1;
-  --chart-2: #6f8ee6;
-  --chart-3: #0d0f14;
-  --chart-4: #9ba1ae;
-  --chart-5: #c8364b;
-  --sidebar: #f4f5f7;
-  --sidebar-foreground: #0d0f14;
-  --sidebar-primary: #0d0f14;
+  --chart-1: #c08f00;
+  --chart-2: #8a8a92;
+  --chart-3: #111113;
+  --chart-4: #c4c4ca;
+  --chart-5: #d42a3a;
+  --sidebar: #efeff0;
+  --sidebar-foreground: #111113;
+  --sidebar-primary: #111113;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #edf1fd;
-  --sidebar-accent-foreground: #1a3fa8;
-  --sidebar-border: #e3e5ea;
-  --sidebar-ring: #1f4fd1;
+  --sidebar-accent: rgb(17 17 19 / 0.05);
+  --sidebar-accent-foreground: #111113;
+  --sidebar-border: rgb(17 17 19 / 0.08);
+  --sidebar-ring: #c08f00;
 }
 
 /* Dark tokens apply on screen only: printed pages (the exam sheet) are always ink on paper. */
 @media not print {
   .dark {
-    /* Chalk on a near-black board */
-    --paper: #0a0b0d;
-    --background: #0a0b0d;
-    --surface: #0e0f12;
-    --foreground: #f1f2f4;
-    --card: #111215;
-    --card-foreground: #f1f2f4;
-    --popover: #16171b;
-    --popover-foreground: #f1f2f4;
-    --sapphire: #8aa4ff;
-    --primary: #8aa4ff;
-    --primary-foreground: #06080f;
-    --secondary: #1a1b1f;
-    --secondary-foreground: #f1f2f4;
-    --muted: #1a1b1f;
-    --muted-foreground: #9a9ea8;
-    --accent: #161c2e;
-    --accent-foreground: #c3d0ff;
-    --destructive: #f2727f;
-    --border: rgb(241 242 244 / 0.09);
-    --input: rgb(241 242 244 / 0.14);
-    --ring: #8aa4ff;
-    --rule: rgb(241 242 244 / 0.07);
-    --margin: #f07c88;
-    --highlight: #a8baff;
-    --highlight-foreground: #06080f;
-    --board: #16181d;
-    --chalk: #eef0f4;
-    --chalk-muted: #9aa1ad;
+    /* Chalk on slate */
+    --paper: #09090b;
+    --background: #0b0b0d;
+    --surface: #0e0e10;
+    --raised: #18181b;
+    --foreground: #ededef;
+    --card: #111113;
+    --card-foreground: #ededef;
+    --popover: #141416;
+    --popover-foreground: #ededef;
+    --brand: #f5cf4a;
+    --brand-ink: #f5cf4a;
+    --brand-foreground: #17130a;
+    --primary: #ededef;
+    --primary-foreground: #0b0b0d;
+    --secondary: #18181b;
+    --secondary-foreground: #ededef;
+    --muted: #18181b;
+    --muted-foreground: #9d9da5;
+    --faint: #75757d;
+    --accent: #1d1d20;
+    --accent-foreground: #ededef;
+    --destructive: #f2555f;
+    --positive: #4cc38a;
+    --border: rgb(237 237 239 / 0.08);
+    --input: rgb(237 237 239 / 0.12);
+    --ring: #f5cf4a;
+    --rule: rgb(237 237 239 / 0.06);
+    --margin: #f2555f;
+    --highlight: #f5cf4a;
+    --highlight-foreground: #17130a;
+    --board: #141416;
+    --chalk: #efeff1;
+    --chalk-muted: #9c9ca4;
 
-    --shader-ink: #f1f2f4;
-    --shader-accent: #6f8fff;
+    --shader-ink: #ededef;
+    --shader-accent: #f5cf4a;
 
-    --chart-1: #8aa4ff;
-    --chart-2: #4f6fd9;
-    --chart-3: #f1f2f4;
-    --chart-4: #9a9ea8;
-    --chart-5: #f07c88;
-    --sidebar: #0e0f12;
-    --sidebar-foreground: #f1f2f4;
-    --sidebar-primary: #f1f2f4;
-    --sidebar-primary-foreground: #0a0b0d;
-    --sidebar-accent: #161c2e;
-    --sidebar-accent-foreground: #c3d0ff;
-    --sidebar-border: rgb(241 242 244 / 0.09);
-    --sidebar-ring: #8aa4ff;
+    --chart-1: #f5cf4a;
+    --chart-2: #8a8a92;
+    --chart-3: #ededef;
+    --chart-4: #3a3a3f;
+    --chart-5: #f2555f;
+    --sidebar: #09090b;
+    --sidebar-foreground: #ededef;
+    --sidebar-primary: #ededef;
+    --sidebar-primary-foreground: #0b0b0d;
+    --sidebar-accent: rgb(237 237 239 / 0.06);
+    --sidebar-accent-foreground: #ededef;
+    --sidebar-border: rgb(237 237 239 / 0.07);
+    --sidebar-ring: #f5cf4a;
   }
 }
 
@@ -201,19 +222,18 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "cv11", "ss01";
+    font-feature-settings: "ss01", "ss02";
   }
   h1,
   h2,
   h3 {
-    font-family: var(--font-heading);
     text-wrap: balance;
   }
   p {
     text-wrap: pretty;
   }
   ::selection {
-    background: color-mix(in oklab, var(--sapphire) 26%, transparent);
+    background: color-mix(in oklab, var(--brand) 32%, transparent);
   }
   :focus-visible {
     outline: 2px solid var(--ring);
@@ -222,12 +242,12 @@
 }
 
 @layer components {
-  /* Study notes and tutor answers rendered from Markdown. Serif body, quiet structure. */
+  /* Study notes and tutor answers rendered from Markdown. Quiet structure, comfortable measure. */
   .prose-notes {
-    font-family: var(--font-serif);
-    font-size: 0.9688rem;
-    line-height: 1.65;
+    font-size: 0.9375rem;
+    line-height: 1.7;
     overflow-wrap: anywhere;
+    color: color-mix(in oklab, var(--foreground) 88%, var(--background));
   }
   .prose-notes > * + * {
     margin-top: 0.75em;
@@ -236,11 +256,11 @@
   .prose-notes h2,
   .prose-notes h3,
   .prose-notes h4 {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
+    color: var(--foreground);
+    font-size: 0.9375rem;
     font-weight: 500;
     line-height: 1.4;
-    margin-top: 1.4em;
+    margin-top: 1.5em;
   }
   .prose-notes > :first-child {
     margin-top: 0;
@@ -259,13 +279,14 @@
     margin-top: 0.3em;
   }
   .prose-notes li::marker {
-    color: var(--muted-foreground);
+    color: var(--faint);
   }
   .prose-notes strong {
-    font-weight: 600;
+    color: var(--foreground);
+    font-weight: 500;
   }
   .prose-notes code {
-    font-family: var(--font-mono, ui-monospace, monospace);
+    font-family: var(--font-mono);
     font-size: 0.85em;
     background: var(--muted);
     border-radius: 4px;
@@ -282,7 +303,7 @@
     padding: 0;
   }
   .prose-notes blockquote {
-    border-left: 2px solid var(--border);
+    border-left: 2px solid var(--brand);
     padding-left: 0.9em;
     color: var(--muted-foreground);
   }
@@ -290,7 +311,6 @@
     display: block;
     overflow-x: auto;
     border-collapse: collapse;
-    font-family: var(--font-sans);
     font-size: 0.875rem;
   }
   .prose-notes th,
@@ -303,6 +323,34 @@
     overflow-x: auto;
     overflow-y: hidden;
     padding: 0.25em 0;
+  }
+
+  /* One entrance per screen: content fades and rises 8px, children staggered by --i. */
+  .enter {
+    animation: var(--animate-enter);
+    animation-delay: calc(var(--i, 0) * 60ms);
+  }
+
+  /* Fine hairline grid for marketing backdrops. */
+  .bg-hairline-grid {
+    background-image:
+      linear-gradient(to right, var(--rule) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--rule) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+    filter: blur(4px);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
   }
 }
 
@@ -324,6 +372,9 @@
   html,
   body {
     background: #fff !important;
+  }
+  [data-slot="sidebar"] {
+    display: none !important;
   }
   a {
     color: inherit;

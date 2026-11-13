@@ -15,7 +15,12 @@ import katex from "katex";
 function Formula({ latex }: { latex: string }) {
   // Formulas were checked with KaTeX on the server; render defensively anyway.
   const html = katex.renderToString(latex, { throwOnError: false, displayMode: true, strict: "ignore", output: "html" });
-  return <div className="overflow-x-auto py-1" dangerouslySetInnerHTML={{ __html: html }} />;
+  return (
+    <div
+      className="overflow-x-auto rounded-[10px] border bg-surface px-3 py-1 [&_.katex-display]:my-2"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
 }
 
 export function NotesPanel({
@@ -40,25 +45,28 @@ export function NotesPanel({
     <div className="grid gap-6">
       {lesson.overview ? (
         <section aria-label="About this lecture" className="grid gap-2">
-          <p className="font-serif text-[0.9375rem] leading-relaxed">{lesson.overview}</p>
-          <AiLabel note={labelNote} fixture={fixture} />
+          <p className="text-[0.9375rem] leading-relaxed text-foreground/90">{lesson.overview}</p>
+          <AiLabel note={labelNote} fixture={fixture} className="text-faint" />
         </section>
       ) : null}
 
       {!chapter ? (
-        <p className="text-sm text-muted-foreground">Notes appear here as each chapter is built.</p>
+        <p className="rounded-2xl border border-dashed p-5 text-sm text-muted-foreground">Notes appear here as each chapter is built.</p>
       ) : (
         <article aria-labelledby="notes-chapter-title" className="grid gap-5">
-          <header className="grid gap-2 border-t border-foreground/10 pt-5">
-            <p className="text-xs text-muted-foreground">
-              Chapter {chapter.position + 1} of {total}
+          <header className="grid gap-2 border-t pt-5">
+            <p className="text-[0.8125rem] text-faint">
+              Chapter <span className="font-mono tabular-nums">{chapter.position + 1}</span> of{" "}
+              <span className="font-mono tabular-nums">{total}</span>
             </p>
-            <h2 id="notes-chapter-title" className="font-serif text-xl leading-snug font-medium">
+            <h2 id="notes-chapter-title" className="text-lg leading-snug font-medium tracking-[-0.01em]">
               {chapter.title}
             </h2>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-[0.8125rem] text-faint">
               <TimestampChip seconds={chapter.startSeconds} onSeek={(s) => onSeek(seekTarget(s))} label={chapter.title} />
-              <span>to {formatTimestamp(chapter.endSeconds)}</span>
+              <span>
+                to <span className="font-mono text-[0.75rem] tabular-nums">{formatTimestamp(chapter.endSeconds)}</span>
+              </span>
             </div>
           </header>
 
@@ -68,7 +76,7 @@ export function NotesPanel({
             <p className="text-sm text-muted-foreground">Couldn&apos;t build notes for this chapter. Use Retry in the chapter list.</p>
           ) : (
             <>
-              {chapter.summary ? <p className="leading-relaxed">{chapter.summary}</p> : null}
+              {chapter.summary ? <p className="text-[0.9375rem] leading-relaxed text-foreground/90">{chapter.summary}</p> : null}
               {chapter.notesMarkdown ? (
                 <Markdown onSeek={(s) => onSeek(seekTarget(s))} durationSeconds={durationSeconds}>
                   {chapter.notesMarkdown}
@@ -76,7 +84,7 @@ export function NotesPanel({
               ) : null}
 
               {chapter.formulas.length > 0 ? (
-                <section aria-labelledby="notes-formulas" className="grid gap-1">
+                <section aria-labelledby="notes-formulas" className="grid gap-2">
                   <h3 id="notes-formulas" className="text-sm font-medium">
                     Formulas
                   </h3>
@@ -87,15 +95,15 @@ export function NotesPanel({
               ) : null}
 
               {chapter.keyMoments.length > 0 ? (
-                <section aria-labelledby="notes-moments" className="grid gap-2">
+                <section aria-labelledby="notes-moments" className="grid gap-2.5">
                   <h3 id="notes-moments" className="text-sm font-medium">
                     Key moments
                   </h3>
-                  <ul className="grid gap-1.5">
+                  <ul className="grid gap-2.5">
                     {chapter.keyMoments.map((m) => (
-                      <li key={m.id} className="flex items-baseline gap-2.5 text-sm">
-                        <TimestampChip seconds={m.seconds} onSeek={(s) => onSeek(seekTarget(s))} label={m.label} />
-                        <span>{m.label}</span>
+                      <li key={m.id} className="flex items-start gap-2.5 text-[0.8125rem] leading-snug">
+                        <TimestampChip seconds={m.seconds} onSeek={(s) => onSeek(seekTarget(s))} label={m.label} className="-mt-px" />
+                        <span className="min-w-0 text-foreground/85">{m.label}</span>
                       </li>
                     ))}
                   </ul>
@@ -103,13 +111,13 @@ export function NotesPanel({
               ) : null}
 
               {chapter.keyTerms.length > 0 ? (
-                <section aria-labelledby="notes-terms" className="grid gap-2">
+                <section aria-labelledby="notes-terms" className="grid gap-2.5">
                   <h3 id="notes-terms" className="text-sm font-medium">
                     Key terms
                   </h3>
                   <ul className="flex flex-wrap gap-1.5">
                     {chapter.keyTerms.map((t) => (
-                      <li key={t} className="rounded-md border border-foreground/10 px-2 py-1 text-[0.8125rem]">
+                      <li key={t} className="rounded-md border bg-surface px-2 py-1 text-[0.8125rem] text-foreground/85">
                         {t}
                       </li>
                     ))}
@@ -118,7 +126,7 @@ export function NotesPanel({
               ) : null}
 
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <AiLabel note={labelNote} fixture={fixture} />
+                <AiLabel note={labelNote} fixture={fixture} className="text-faint" />
                 <SaveConceptButton
                   key={chapter.position}
                   size="xs"
@@ -137,11 +145,12 @@ export function NotesPanel({
             </>
           )}
 
-          <nav aria-label="Chapter notes" className="flex justify-between gap-2 border-t border-foreground/10 pt-4">
+          <nav aria-label="Chapter notes" className="flex justify-between gap-2 border-t pt-3">
             <Button
               type="button"
               variant="ghost"
               size="sm"
+              className="-ml-2.5 text-muted-foreground"
               disabled={chapter.position === 0}
               onClick={() => onSelectPosition(chapter.position - 1)}
             >
@@ -152,6 +161,7 @@ export function NotesPanel({
               type="button"
               variant="ghost"
               size="sm"
+              className="-mr-2.5 text-muted-foreground"
               disabled={chapter.position >= total - 1}
               onClick={() => onSelectPosition(chapter.position + 1)}
             >

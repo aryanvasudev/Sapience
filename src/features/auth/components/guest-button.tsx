@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 
+import { MorphText } from "@/components/motion/morph-text";
 import { Button } from "@/components/ui/button";
 import { CaptchaError, useTurnstile } from "@/hooks/use-turnstile";
 import { cn } from "@/lib/utils";
@@ -51,7 +52,7 @@ export function GuestButton({
           });
         }}
       >
-        {pending ? "Starting…" : label}
+        <MorphText>{pending ? "Starting…" : label}</MorphText>
       </Button>
       {captchaEnabled ? <div ref={setCaptchaContainer} className="empty:hidden" /> : null}
       {error ? (

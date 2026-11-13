@@ -94,12 +94,12 @@ Nothing external is connected yet. Each of these needs a person with the account
 
 ## Design
 
-- **Light theme, "notebook":** cool paper (`#F7F8FA`), blue-black ink (`#1B2233`), fountain-pen blue (`#2747C7`). The margin red (`#D6455B`) and highlighter yellow (`#FFE76A`) are used only for the margin rule, checkpoints and the current moment.
-- **Dark theme, "chalkboard":** slate green (`#1C2623`) with chalk (`#E8ECE4`).
-- **Type:** Inter for UI, Literata for headings and notes.
-- Public pages sit on ruled paper with a red margin line. The app itself stays plain.
-- Tokens live in `src/app/globals.css`, including the lecture-board colours (`--board`, `--chalk`) and the one easing curve (`--ease-out: cubic-bezier(0.22, 1, 0.36, 1)`).
-- **Signature:** the highlighter checkpoint diamond on the chapter timeline. It appears in the landing-page lesson preview and is reserved for checkpoints.
+- **Direction:** a dark lecture hall. Near-black slate and chalk-white type on a graphite ramp (no hue), with one highlighter-yellow accent (`--brand`, `#F5CF4A` dark / `#C08F00` light). The accent is spent only on the checkpoint diamond, the playhead, progress, the current selection and focus. Primary buttons are chalk on dark, ink on light. Dark is the default theme; light and "match my device" are in the account menu.
+- **Type:** Geist for everything, Geist Mono for timestamps, counts and figures. No serif.
+- **Signature:** the yellow checkpoint diamond (on the chapter timeline, the logo tile and every checkpoint) and mono timestamp chips.
+- **App shell:** inset, icon-collapsible sidebar (Efferd `app-shell-4`); the sidebar folds to icons on lesson pages. Pages open with `PageHeader` (`src/components/layout/page-header.tsx`).
+- **Marketing:** a React Bits `LightRays` shader as a projector beam over the hero and a live lesson window that plays once; React Bits `Threads` behind the closing call to action and the sign-in panel.
+- Tokens live in `src/app/globals.css`, including the lecture-board colours (`--board`, `--chalk`) and the easing curves (`--ease-out: cubic-bezier(0.22, 1, 0.36, 1)`).
 
 ### Icons
 
@@ -109,7 +109,9 @@ Nothing external is connected yet. Each of these needs a person with the account
 
 ### Motion
 
-- Animation is used only to explain something (the landing-page lesson preview) or to give feedback: buttons scale to 0.97 when pressed, accordions and the stepper move with `--ease-out`.
+- Animation is used to explain something (the landing-page lesson preview) or to give feedback: buttons scale to 0.97 when pressed, accordions and the stepper move with `--ease-out`.
+- Shared helpers in `src/components/motion/`: `MorphText` (a button label blurs into its next state), `Reveal` (marketing sections rise in once on scroll), `CountUp` (figures tween once). Selected surfaces morph between items with Motion `layoutId` (sidebar nav, `MorphTabsList` in `src/components/ui/morph-tabs.tsx`).
+- Each page has one entrance: the `.enter` class (fade, 8px rise, blur) with a `--i` stagger.
 - UI transitions stay under 300ms, nothing loops, and hover effects are limited to `@media (hover: hover)`.
 - With `prefers-reduced-motion`, the preview jumps straight to its end state and the stepper fades instead of sliding.
 
@@ -119,8 +121,14 @@ Both registries are set up in `components.json`. Each component was installed wi
 
 | Where | Component | Source |
 | --- | --- | --- |
+| Signed-in shell | `src/components/layout/app-sidebar.tsx`, `src/app/app/layout.tsx` | Efferd `@efferd/app-shell-4` (shadcn `sidebar`) |
+| Landing hero shader | `src/components/reactbits/light-rays.tsx` | ReactBits `@react-bits/LightRays-TS-TW` |
+| CTA and sign-in shader | `src/components/reactbits/threads.tsx` | ReactBits `@react-bits/Threads-TS-TW` |
+| Landing features | `src/components/efferd/feature-section.tsx` | Efferd `@efferd/features-6` |
+| Sign-in / sign-up | `src/app/(auth)/layout.tsx` | Efferd `@efferd/auth-2` |
+| Closing call to action | `src/components/efferd/cta-section.tsx` | Efferd `@efferd/cta-4` |
 | Onboarding, three questions | Stepper (`src/components/reactbits/stepper.tsx`) | [ReactBits](https://reactbits.dev) `@react-bits/Stepper-TS-TW` |
-| Landing page FAQ | `src/components/efferd/faqs-section.tsx` | [Efferd](https://efferd.com) `@efferd/faqs-2` |
+| Landing page FAQ | `src/components/efferd/faqs-section.tsx` | [Efferd](https://efferd.com) `@efferd/faqs-7` |
 | Public-page footer | `src/components/efferd/site-footer.tsx` | Efferd `@efferd/footer-1` |
 | 404 page | `src/app/not-found.tsx` with `full-width-divider.tsx` | Efferd `@efferd/not-found-1` |
 

@@ -54,7 +54,7 @@ export function MyNotesPanel({
         }}
       >
         <label htmlFor={`${id}-draft`} className="text-sm font-medium">
-          Note at <span className="tabular-nums">{formatTimestamp(at)}</span>
+          Note at <span className="font-mono text-[0.8125rem] text-muted-foreground tabular-nums">{formatTimestamp(at)}</span>
         </label>
         <textarea
           id={`${id}-draft`}
@@ -69,7 +69,7 @@ export function MyNotesPanel({
           rows={3}
           maxLength={4000}
           placeholder="What do you want to remember from here?"
-          className="min-h-20 w-full resize-y rounded-lg border bg-card px-3 py-2 text-sm"
+          className="min-h-20 w-full resize-y rounded-[10px] border bg-card px-3 py-2 text-sm leading-relaxed transition-[border-color,box-shadow] duration-150 ease-(--ease-out) outline-none placeholder:text-faint focus-visible:border-brand/50 focus-visible:shadow-[0_0_0_4px_color-mix(in_oklab,var(--brand)_14%,transparent)] dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.03)]"
         />
         <div className="flex flex-wrap gap-2">
           <Button type="submit" size="sm" disabled={pending || draft.trim().length === 0}>
@@ -77,18 +77,18 @@ export function MyNotesPanel({
           </Button>
           <Button type="button" size="sm" variant="outline" disabled={pending} onClick={() => save("bookmark")}>
             <BookmarkIcon />
-            Bookmark {formatTimestamp(at)}
+            Bookmark <span className="font-mono text-[0.75rem] tabular-nums">{formatTimestamp(at)}</span>
           </Button>
         </div>
         {error ? (
-          <p role="alert" className="text-sm text-destructive">
+          <p role="alert" className="animate-fade text-sm text-destructive">
             {error}
           </p>
         ) : null}
       </form>
 
       {notes.length === 0 ? (
-        <p className="rounded-lg border border-dashed px-4 py-5 text-sm text-muted-foreground">
+        <p className="rounded-2xl border border-dashed p-5 text-sm leading-relaxed text-muted-foreground">
           Your own notes and bookmarks for this lecture show up here, in lecture order. They&apos;re private to you and
           appear on the exam sheet.
         </p>
@@ -127,15 +127,16 @@ function NoteItem({
   const label = note.kind === "bookmark" ? "Bookmark" : "Note";
 
   return (
-    <li className="grid gap-2 rounded-lg border bg-card p-3">
-      <div className="flex items-center gap-2">
+    <li className="grid gap-2 rounded-[10px] border bg-card p-3 dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.03)]">
+      <div className="-my-0.5 -mr-1 flex items-center gap-2">
         {note.seconds !== null ? <TimestampChip seconds={note.seconds} onSeek={onSeek} label={label} /> : null}
-        {note.kind === "bookmark" ? <BookmarkIcon className="size-4.5 text-muted-foreground" aria-label="Bookmark" /> : null}
-        <div className="ml-auto flex gap-1">
+        {note.kind === "bookmark" ? <BookmarkIcon className="size-4 text-faint" aria-label="Bookmark" /> : null}
+        <div className="ml-auto flex gap-0.5">
           <Button
             type="button"
             size="icon-sm"
             variant="ghost"
+            className="text-faint [@media(hover:hover)]:hover:text-foreground"
             aria-label={`Edit ${label.toLowerCase()} at ${formatTimestamp(note.seconds ?? 0)}`}
             onClick={() => setEditing((e) => !e)}
           >
@@ -145,6 +146,7 @@ function NoteItem({
             type="button"
             size="icon-sm"
             variant="ghost"
+            className="text-faint [@media(hover:hover)]:hover:text-foreground"
             disabled={pending}
             aria-label={`Delete ${label.toLowerCase()} at ${formatTimestamp(note.seconds ?? 0)}`}
             onClick={() =>
@@ -179,7 +181,7 @@ function NoteItem({
             onChange={(e) => setValue(e.target.value)}
             rows={3}
             maxLength={4000}
-            className="w-full resize-y rounded-lg border bg-background px-3 py-2 text-sm"
+            className="w-full resize-y rounded-[10px] border bg-background px-3 py-2 text-sm leading-relaxed transition-[border-color,box-shadow] duration-150 ease-(--ease-out) outline-none placeholder:text-faint focus-visible:border-brand/50 focus-visible:shadow-[0_0_0_4px_color-mix(in_oklab,var(--brand)_14%,transparent)] dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.03)]"
           />
           <div className="flex gap-2">
             <Button type="submit" size="sm" disabled={pending}>
@@ -191,10 +193,10 @@ function NoteItem({
           </div>
         </form>
       ) : note.content ? (
-        <p className="text-sm whitespace-pre-wrap">{note.content}</p>
+        <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{note.content}</p>
       ) : null}
       {error ? (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="animate-fade text-sm text-destructive">
           {error}
         </p>
       ) : null}

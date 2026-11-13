@@ -6,8 +6,10 @@ import { useCallback, useMemo, useState } from "react";
 import { z } from "zod";
 
 import { DescriptionIcon, ForumIcon, NotesIcon, OpenInNewIcon, SearchIcon, StickyNote2Icon } from "@/components/icons";
+import { SectionHeading } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MorphTabsList } from "@/components/ui/morph-tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { OUTPUT_LANGUAGE_NAMES, type OutputLanguage, type TutorStyle } from "@/config/enums";
 import { MyNotesPanel } from "@/features/notes/my-notes-panel";
 import { TutorPanel } from "@/features/tutor/components/tutor-panel";
@@ -23,7 +25,7 @@ import { useCheckpoints } from "../hooks/use-checkpoints";
 import { useLessonStatus } from "../hooks/use-lesson-status";
 import { usePlaybackClock, usePlayerKeyboard, useProgressSaving } from "../hooks/use-playback";
 import { useYouTubePlayer } from "../hooks/use-youtube-player";
-import { ChapterList } from "./chapter-list";
+import { ChapterList, ChapterTimeline } from "./chapter-list";
 import { CheckpointCard } from "./checkpoint-card";
 import { LessonStatusBanner } from "./lesson-status-banner";
 import { NotesPanel } from "./notes-panel";
@@ -40,6 +42,15 @@ export function chapterAt(chapters: ChapterPublic[], seconds: number): ChapterPu
 
 type PanelTab = "tutor" | "notes" | "search" | "mine";
 const PANEL_TABS: readonly PanelTab[] = ["tutor", "notes", "search", "mine"];
+const PANEL_TAB_ITEMS = [
+  { value: "tutor", label: "Tutor", icon: <ForumIcon /> },
+  { value: "notes", label: "Notes", icon: <NotesIcon /> },
+  { value: "search", label: "Search", icon: <SearchIcon /> },
+  { value: "mine", label: "Mine", icon: <StickyNote2Icon /> },
+] satisfies { value: PanelTab; label: string; icon: React.ReactNode }[];
+
+/** Tab panels fade in when shown; the force-mounted ones restart the fade when they unhide. */
+const TAB_PANEL = "animate-fade [animation-duration:200ms]";
 
 export function LessonScreen({
   initial,
@@ -180,6 +191,23 @@ export function LessonScreen({
     });
   };
 
+  const checkpointTotal = chapters.filter((c) => c.checkpoint).length;
+  const checkpointsAnswered = chapters.filter((c) => c.checkpoint && attempts[c.checkpoint.id]).length;
+  const chaptersHeading = (
+    <SectionHeading
+      className="mb-3"
+      meta={
+        checkpointTotal > 0 ? (
+          <span className="font-mono text-[0.75rem] text-faint tabular-nums">
+            {checkpointsAnswered}/{checkpointTotal} checkpoints
+          </span>
+        ) : null
+      }
+    >
+      Chapters
+    </SectionHeading>
+  );
+
   const chapterList =
     chapters.length > 0 ? (
       <ChapterList
@@ -196,42 +224,63 @@ export function LessonScreen({
     ) : null;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-8 xl:grid-cols-[minmax(0,1fr)_27rem]">
-      <div className="grid min-w-0 gap-5">
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_25rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_28rem]">
+      <div className="grid min-w-0 gap-6">
         {/* The player. Nothing is ever drawn over it (Section 5.2). */}
-        <div className="sticky top-16 z-20 -mx-4 bg-background md:mx-0 md:pt-1">
-          <div className="relative aspect-video overflow-hidden bg-black md:rounded-xl">
+        <div className="sticky top-14 z-20 -mx-4 bg-background md:mx-0 md:-mt-4 md:pt-4">
+          <div className="relative aspect-video overflow-hidden bg-black md:rounded-2xl md:ring-1 md:ring-border">
             <div ref={mountPlayer} className="absolute inset-0 [&_iframe]:size-full" />
           </div>
+          {chapters.length > 0 ? (
+            <div className="px-4 pt-4 pb-3 md:px-0">
+              <ChapterTimeline
+                chapters={chapters}
+                attempts={attempts}
+                durationSeconds={data.video.durationSeconds}
+                time={now}
+                currentPosition={currentPosition}
+                playing={player.state === "playing"}
+              />
+            </div>
+          ) : null}
         </div>
         {playerError ? (
-          <p role="alert" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-destructive">
+          <p role="alert" className="-mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-destructive">
             {playerError}
-            <a href={videoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-foreground underline underline-offset-4">
+            <a
+              href={videoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-foreground underline decoration-foreground/30 underline-offset-4 transition-[text-decoration-color] duration-150 ease-(--ease-out) [@media(hover:hover)]:hover:decoration-foreground"
+            >
               Open on YouTube
               <OpenInNewIcon className="size-4" />
             </a>
           </p>
         ) : null}
 
-        <header className="grid gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            {lesson?.source === "fixture" ? (
-              <span className="rounded-md bg-highlight px-2 py-0.5 text-xs font-medium text-highlight-foreground">Test fixture</span>
-            ) : null}
-            {lesson?.source === "transcript_paste" ? (
-              <span className="rounded-md border border-foreground/15 px-2 py-0.5 text-xs text-muted-foreground">
-                Built from pasted transcript
-              </span>
-            ) : null}
-          </div>
-          <h1 className="font-serif text-2xl leading-snug font-medium tracking-[-0.01em] text-balance">{data.video.title}</h1>
-          <p className="text-sm text-muted-foreground">
+        <header className="enter grid gap-2">
+          {lesson?.source === "fixture" || lesson?.source === "transcript_paste" ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {lesson.source === "fixture" ? (
+                <span className="inline-flex h-5 items-center rounded-[5px] bg-highlight px-1.5 text-[0.6875rem] font-medium text-highlight-foreground">
+                  Test fixture
+                </span>
+              ) : null}
+              {lesson.source === "transcript_paste" ? (
+                <span className="inline-flex h-5 items-center rounded-[5px] border px-1.5 text-[0.6875rem] text-muted-foreground">
+                  Built from pasted transcript
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+          <h1 className="text-2xl leading-tight font-semibold tracking-[-0.02em] text-balance">{data.video.title}</h1>
+          <p className="text-[0.8125rem] text-muted-foreground">
             {[data.video.channelTitle, formatDuration(data.video.durationSeconds), `Notes in ${OUTPUT_LANGUAGE_NAMES[language]}`]
               .filter(Boolean)
               .join(" · ")}
           </p>
-          <div className="flex flex-wrap items-center gap-2 pt-1">
+          <div className="flex flex-wrap items-center gap-2 pt-2">
             {chapters.some((c) => c.status === "ready") ? (
               <Button asChild size="sm" variant="outline">
                 <Link href={`/app/lesson/${videoId}/sheet?lang=${language}`}>
@@ -254,14 +303,23 @@ export function LessonScreen({
         />
 
         {chapterList ? (
-          <section aria-label="Chapters" className="hidden lg:block">
+          <section aria-label="Chapters" className="enter hidden [--i:1] lg:block">
+            {chaptersHeading}
             {chapterList}
           </section>
         ) : null}
       </div>
 
-      <aside aria-label="Study panel" className="min-w-0 lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:pr-1">
-        {chapterList ? <section aria-label="Chapters" className="mb-6 lg:hidden">{chapterList}</section> : null}
+      <aside
+        aria-label="Study panel"
+        className="enter min-w-0 [--i:1] lg:sticky lg:top-[4.5rem] lg:-mx-1 lg:max-h-[calc(100svh-6.5rem)] lg:overflow-y-auto lg:overscroll-contain lg:px-1 lg:pb-1 lg:[scrollbar-width:thin]"
+      >
+        {chapterList ? (
+          <section aria-label="Chapters" className="mb-8 lg:hidden">
+            {chaptersHeading}
+            {chapterList}
+          </section>
+        ) : null}
 
         {/* Announces auto-triggered checkpoints; the card itself also takes focus. */}
         <p aria-live="assertive" className="sr-only">
@@ -314,26 +372,9 @@ export function LessonScreen({
             onValueChange={(v) => setTab(PANEL_TABS.find((t) => t === v) ?? "notes")}
             className="gap-5"
           >
-            <TabsList className="w-full">
-              <TabsTrigger value="tutor">
-                <ForumIcon />
-                Tutor
-              </TabsTrigger>
-              <TabsTrigger value="notes">
-                <NotesIcon />
-                Notes
-              </TabsTrigger>
-              <TabsTrigger value="search">
-                <SearchIcon />
-                Search
-              </TabsTrigger>
-              <TabsTrigger value="mine">
-                <StickyNote2Icon />
-                Mine
-              </TabsTrigger>
-            </TabsList>
+            <MorphTabsList value={tab} items={PANEL_TAB_ITEMS} />
             {/* Kept mounted so a half-written question survives switching tabs. */}
-            <TabsContent value="tutor" forceMount className="data-[state=inactive]:hidden">
+            <TabsContent value="tutor" forceMount className={`${TAB_PANEL} data-[state=inactive]:hidden`}>
               <TutorPanel
                 videoId={videoId}
                 language={language}
@@ -347,7 +388,7 @@ export function LessonScreen({
                 onSeek={seek}
               />
             </TabsContent>
-            <TabsContent value="notes">
+            <TabsContent value="notes" className={TAB_PANEL}>
               {lesson ? (
                 <NotesPanel
                   lesson={lesson}
@@ -357,13 +398,15 @@ export function LessonScreen({
                   onSelectPosition={(position) => setManual({ position, during: currentPosition })}
                 />
               ) : (
-                <p className="text-sm text-muted-foreground">Notes appear here as each chapter is built. The tutor already works.</p>
+                <p className="rounded-2xl border border-dashed p-5 text-sm leading-relaxed text-muted-foreground">
+                  Notes appear here as each chapter is built. The tutor already works.
+                </p>
               )}
             </TabsContent>
-            <TabsContent value="mine" forceMount className="data-[state=inactive]:hidden">
+            <TabsContent value="mine" forceMount className={`${TAB_PANEL} data-[state=inactive]:hidden`}>
               <MyNotesPanel videoId={videoId} initialNotes={initialNotes} time={now} onSeek={seek} />
             </TabsContent>
-            <TabsContent value="search">
+            <TabsContent value="search" className={TAB_PANEL}>
               <SearchPanel videoId={videoId} language={language} chapters={chapters} onSeek={seek} />
             </TabsContent>
           </Tabs>

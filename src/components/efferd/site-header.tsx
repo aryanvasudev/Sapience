@@ -37,17 +37,17 @@ export function SiteHeader({ actions }: { actions?: ReactNode }) {
   return (
     <header
       data-scrolled={scrolled || open}
-      className="sticky top-0 z-50 border-b border-transparent transition-[background-color,border-color] duration-200 ease-(--ease-out) data-[scrolled=true]:border-border data-[scrolled=true]:bg-background/85 data-[scrolled=true]:backdrop-blur-md"
+      className="sticky top-0 z-50 border-b border-transparent transition-[background-color,border-color] duration-200 ease-(--ease-out) data-[scrolled=true]:border-border data-[scrolled=true]:bg-background/70 data-[scrolled=true]:backdrop-blur-xl"
     >
-      <nav aria-label="Main" className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 md:px-6">
+      <nav aria-label="Main" className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 md:px-6">
         <Wordmark />
-        <div className="hidden items-center gap-1 md:flex">
+        <div className="hidden items-center gap-0.5 md:flex">
           {SITE_NAV.map((link) => (
-            <Button asChild key={link.href} size="sm" variant="ghost" className="h-9 px-3 text-muted-foreground [@media(hover:hover)]:hover:text-foreground">
+            <Button asChild key={link.href} size="sm" variant="ghost" className="h-9 px-3 text-[0.8125rem] font-normal text-muted-foreground [@media(hover:hover)]:hover:bg-transparent [@media(hover:hover)]:hover:text-foreground">
               <Link href={link.href}>{link.label}</Link>
             </Button>
           ))}
-          {actions ? <div className="ml-3 flex items-center gap-2 border-l pl-4">{actions}</div> : null}
+          {actions ? <div className="ml-4 flex items-center gap-1">{actions}</div> : null}
         </div>
         <Button
           aria-controls="site-menu"

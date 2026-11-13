@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 
+import { MorphText } from "@/components/motion/morph-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CaptchaError, useTurnstile } from "@/hooks/use-turnstile";
@@ -62,12 +63,12 @@ export function SignInForm({ next }: { next?: string }) {
       </FormField>
       {captchaEnabled ? <div ref={setCaptchaContainer} className="empty:hidden" /> : null}
       {formError ? (
-        <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-sm text-destructive">
+        <p role="alert" className="animate-fade rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive">
           {formError}
         </p>
       ) : null}
       <Button type="submit" size="lg" disabled={pending}>
-        {pending ? "Signing in…" : "Sign in"}
+        <MorphText>{pending ? "Signing in…" : "Sign in"}</MorphText>
       </Button>
     </form>
   );

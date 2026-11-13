@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { MorphText } from "@/components/motion/morph-text";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
@@ -32,7 +33,7 @@ export function GoogleButton({ next = "/app", linkToGuest = false }: { next?: st
     <div className="grid gap-2">
       <Button type="button" variant="outline" size="lg" onClick={onClick} disabled={pending}>
         <GoogleMark />
-        {pending ? "Opening Google…" : "Continue with Google"}
+        <MorphText>{pending ? "Opening Google…" : "Continue with Google"}</MorphText>
       </Button>
       {error ? (
         <p role="alert" className="text-sm text-destructive">

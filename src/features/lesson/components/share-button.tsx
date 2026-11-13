@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { CheckIcon, ShareIcon } from "@/components/icons";
+import { MorphText } from "@/components/motion/morph-text";
 import { Button } from "@/components/ui/button";
 import type { OutputLanguage } from "@/config/enums";
 
@@ -30,8 +31,8 @@ export function ShareButton({ videoId, language }: { videoId: string; language: 
           }
         }}
       >
-        {state === "copied" ? <CheckIcon /> : <ShareIcon />}
-        {state === "copied" ? "Link copied" : "Share"}
+        {state === "copied" ? <CheckIcon className="animate-fade" /> : <ShareIcon />}
+        <MorphText>{state === "copied" ? "Link copied" : "Share"}</MorphText>
       </Button>
       <span className="sr-only" aria-live="polite">
         {state === "copied" ? "Link to this lesson copied" : ""}
@@ -42,7 +43,7 @@ export function ShareButton({ videoId, language }: { videoId: string; language: 
           aria-label="Link to this lesson"
           value={state.manual}
           onFocus={(e) => e.currentTarget.select()}
-          className="h-9 min-w-0 flex-1 rounded-lg border bg-card px-3 text-sm"
+          className="h-8 min-w-0 flex-1 animate-fade rounded-lg border bg-card px-3 font-mono text-[0.75rem] text-muted-foreground"
         />
       ) : null}
     </>

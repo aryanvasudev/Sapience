@@ -1,10 +1,12 @@
 "use client";
 
+import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 import {
   ErrorIcon,
   FactCheckIcon,
+  ForumIcon,
   HelpIcon,
   KeyboardArrowDownIcon,
   LightbulbIcon,
@@ -81,6 +83,10 @@ export function TutorPanel({
   const endRef = useRef<HTMLDivElement>(null);
   const { messages, busy, error, status } = tutor;
   const position = chapterPosition ?? undefined;
+  const reduce = useReducedMotion();
+  // Messages already on screen when the panel mounts (the saved conversation) appear without an
+  // entrance; only new ones rise in, once, when they are added. Streaming text never re-animates.
+  const [restored] = useState(() => new Set(messages.map((m) => m.id)));
 
   // Keep the newest text in view while it streams.
   const lastText = messages.length > 0 ? textOf(messages[messages.length - 1]).length : 0;
@@ -106,12 +112,12 @@ export function TutorPanel({
   return (
     <section aria-label="Tutor" className="flex min-h-[28rem] flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="min-w-0 truncate text-xs text-muted-foreground">
-          Asking at <span className="tabular-nums">{formatTimestamp(time)}</span>
+        <p className="min-w-0 truncate text-[0.8125rem] text-faint">
+          Asking at <span className="font-mono text-[0.75rem] text-muted-foreground tabular-nums">{formatTimestamp(time)}</span>
           {chapterTitle ? ` · ${chapterTitle}` : ""}
         </p>
         {messages.length > 0 ? (
-          <Button type="button" variant="ghost" size="xs" onClick={tutor.newChat} disabled={busy}>
+          <Button type="button" variant="ghost" size="xs" className="-mr-2 text-muted-foreground" onClick={tutor.newChat} disabled={busy}>
             New chat
           </Button>
         ) : null}
@@ -119,9 +125,12 @@ export function TutorPanel({
 
       <div role="log" aria-live="polite" aria-busy={busy} className="grid flex-1 content-start gap-5">
         {messages.length === 0 ? (
-          <div className="grid gap-2 rounded-xl border border-dashed border-foreground/15 px-4 py-5 text-sm">
-            <p className="font-serif text-base font-medium">Stuck on something?</p>
-            <p className="text-muted-foreground">
+          <div className="grid gap-1.5 rounded-2xl border border-dashed p-5 text-sm">
+            <p className="flex items-center gap-2 text-[0.9375rem] font-medium">
+              <ForumIcon className="size-4.5 text-faint" />
+              Stuck on something?
+            </p>
+            <p className="leading-relaxed text-muted-foreground">
               Ask about what&apos;s on screen. The tutor knows where you are in the lecture and uses the lecturer&apos;s own terms.
             </p>
           </div>
@@ -131,34 +140,41 @@ export function TutorPanel({
             const at = m.metadata?.timestampSeconds ?? 0;
             const title = (asked.split("\n")[0] || `Tutor answer at ${formatTimestamp(at)}`).slice(0, 120);
             return (
-              <Message
+              <motion.div
                 key={m.id}
-                message={m}
-                incomplete={tutor.isIncomplete(m)}
-                onRetry={i === messages.length - 1 && !busy && !error && tutor.canRetry ? tutor.retry : undefined}
-                streaming={busy && i === messages.length - 1 && m.role === "assistant"}
-                durationSeconds={durationSeconds}
-                onSeek={onSeek}
-                saveAs={{
-                  youtubeVideoId: videoId,
-                  language,
-                  sourceSeconds: at,
-                  title,
-                  explanationMarkdown: textOf(m).slice(0, 8000),
-                  source: "tutor",
-                }}
-              />
+                className="grid min-w-0"
+                initial={restored.has(m.id) ? false : reduce ? { opacity: 0 } : { opacity: 0, y: 6 }}
+                animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <Message
+                  message={m}
+                  incomplete={tutor.isIncomplete(m)}
+                  onRetry={i === messages.length - 1 && !busy && !error && tutor.canRetry ? tutor.retry : undefined}
+                  streaming={busy && i === messages.length - 1 && m.role === "assistant"}
+                  durationSeconds={durationSeconds}
+                  onSeek={onSeek}
+                  saveAs={{
+                    youtubeVideoId: videoId,
+                    language,
+                    sourceSeconds: at,
+                    title,
+                    explanationMarkdown: textOf(m).slice(0, 8000),
+                    source: "tutor",
+                  }}
+                />
+              </motion.div>
             );
           })
         )}
         {status === "submitted" ? (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <ProgressActivityIcon className="size-4.5 animate-spin motion-reduce:animate-none" />
+          <p className="flex animate-fade items-center gap-2 text-sm text-muted-foreground">
+            <ProgressActivityIcon className="size-4 animate-spin text-faint motion-reduce:animate-none" />
             Thinking…
           </p>
         ) : null}
         {error ? (
-          <div role="alert" className="grid gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-sm">
+          <div role="alert" className="grid animate-fade gap-2.5 rounded-[10px] border border-destructive/30 bg-destructive/5 p-3 text-sm">
             <p className="flex items-start gap-2 text-destructive">
               <ErrorIcon className="mt-px size-4.5 shrink-0" />
               {error}
@@ -185,7 +201,7 @@ export function TutorPanel({
         <div ref={endRef} />
       </div>
 
-      <div className="sticky bottom-0 grid gap-2 bg-background pt-1 pb-1">
+      <div className="sticky bottom-0 grid gap-2.5 bg-background pt-2 pb-1">
         <div className="flex flex-wrap gap-1.5">
           <Button
             type="button"
@@ -249,7 +265,7 @@ export function TutorPanel({
             e.preventDefault();
             send();
           }}
-          className="grid gap-2 rounded-xl border border-input bg-card p-2 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50"
+          className="grid gap-1.5 rounded-2xl border bg-card p-2 transition-[border-color,box-shadow] duration-200 ease-(--ease-out) focus-within:border-brand/50 focus-within:shadow-[0_0_0_4px_color-mix(in_oklab,var(--brand)_14%,transparent)] dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]"
         >
           <label htmlFor="tutor-input" className="sr-only">
             Ask the tutor
@@ -268,7 +284,7 @@ export function TutorPanel({
                 send();
               }
             }}
-            className="max-h-40 min-h-12 resize-none border-0 bg-transparent p-1 shadow-none focus-visible:ring-0 dark:bg-transparent"
+            className="max-h-40 min-h-12 resize-none border-0 bg-transparent px-1.5 py-1 text-sm shadow-none outline-none placeholder:text-faint focus-visible:ring-0 focus-visible:outline-none dark:bg-transparent"
           />
           <div className="flex items-center justify-between gap-2">
             <LanguageChip value={tutor.responseLanguage} onChange={tutor.setResponseLanguage} />
@@ -335,7 +351,7 @@ function Message({
   const text = textOf(message);
   if (message.role === "user") {
     return (
-      <p className="ml-8 justify-self-end rounded-2xl rounded-br-md bg-secondary px-3.5 py-2 text-sm whitespace-pre-wrap text-secondary-foreground">
+      <p className="ml-8 justify-self-end rounded-2xl rounded-br-md bg-raised px-3.5 py-2 text-sm leading-relaxed whitespace-pre-wrap text-foreground ring-1 ring-border">
         {text}
       </p>
     );
@@ -344,7 +360,7 @@ function Message({
   const conversationId = message.metadata?.conversationId;
   return (
     <article className="grid gap-2">
-      {sources ? <p className="text-xs text-muted-foreground">{sources}</p> : null}
+      {sources ? <p className="text-[0.75rem] text-faint">{sources}</p> : null}
       {text ? (
         <Markdown className="text-sm" onSeek={onSeek} durationSeconds={durationSeconds}>
           {text}
@@ -353,7 +369,7 @@ function Message({
       {!streaming && text ? (
         <div className="grid gap-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <AiLabel note={incomplete ? "incomplete answer" : undefined} />
+            <AiLabel note={incomplete ? "incomplete answer" : undefined} className="text-faint" />
             <div className="flex items-center gap-1">
               {incomplete && onRetry ? (
                 <Button type="button" size="xs" variant="outline" onClick={onRetry}>
@@ -404,8 +420,8 @@ function CheckUnderstanding({
 
   if (state.kind === "ready") {
     return (
-      <div className="rounded-xl border border-foreground/10 bg-card p-4">
-        <p className="mb-3 text-xs text-muted-foreground">Check my understanding · AI-generated question</p>
+      <div className="animate-fade rounded-xl border bg-card p-4 dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]">
+        <p className="mb-3 text-[0.75rem] text-faint">Check my understanding · AI-generated question</p>
         <QuestionCard question={state.question} durationSeconds={durationSeconds} onSeek={onSeek} />
       </div>
     );
@@ -423,7 +439,7 @@ function CheckUnderstanding({
         Check my understanding
       </Button>
       {state.kind === "error" ? (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="animate-fade text-sm text-destructive">
           {state.message}
         </p>
       ) : null}

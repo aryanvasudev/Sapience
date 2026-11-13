@@ -65,7 +65,7 @@ export function OnboardingForm({ defaults }: { defaults: OnboardingInput }) {
           submit(answers);
         }}
         width="100%"
-        radius={16}
+        radius={18}
         nextButtonText="Next"
         completeButtonText="Save and continue"
         nextButtonProps={{ disabled: pending }}
@@ -123,8 +123,8 @@ export function OnboardingForm({ defaults }: { defaults: OnboardingInput }) {
         </Step>
       </Stepper>
 
-      <div>
-        <Button type="button" variant="ghost" disabled={pending} onClick={() => submit(null)} className="-ml-3">
+      <div className="flex justify-center">
+        <Button type="button" variant="ghost" disabled={pending} onClick={() => submit(null)} className="text-muted-foreground">
           Skip for now
         </Button>
       </div>
@@ -136,9 +136,9 @@ function Question({ legend, hint, children }: { legend: string; hint?: string; c
   return (
     // A <legend> is not a grid item, so it carries its own bottom margin.
     <fieldset className="grid gap-3">
-      <legend className="mb-4 font-serif text-lg leading-snug font-medium">{legend}</legend>
-      {hint ? <p className="-mt-2 mb-1 text-sm text-muted-foreground">{hint}</p> : null}
-      <div className="grid gap-2 sm:grid-cols-2">{children}</div>
+      <legend className="mb-4 text-[1.0625rem] leading-snug font-medium text-balance">{legend}</legend>
+      {hint ? <p className="-mt-2 mb-1 text-[0.8125rem] text-muted-foreground">{hint}</p> : null}
+      <div className="grid gap-2">{children}</div>
     </fieldset>
   );
 }
@@ -159,15 +159,21 @@ function Choice({
   return (
     <label
       className={cn(
-        "flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border bg-card px-3.5 py-3 transition-[background-color,border-color] duration-150 ease-(--ease-out)",
-        "has-checked:border-primary has-checked:bg-accent has-focus-visible:ring-2 has-focus-visible:ring-ring",
-        "[@media(hover:hover)]:hover:border-foreground/25",
+        "flex min-h-12 cursor-pointer items-center gap-3 rounded-[10px] border bg-card px-3.5 py-3 transition-[background-color,border-color,transform] duration-150 ease-(--ease-out) active:scale-[0.99]",
+        "has-checked:border-foreground/30 has-checked:bg-raised has-focus-visible:ring-2 has-focus-visible:ring-ring",
+        "[@media(hover:hover)]:hover:border-foreground/20",
       )}
     >
-      <input type="radio" name={name} checked={checked} onChange={onSelect} className="mt-1 size-4 accent-primary" />
+      <input
+        type="radio"
+        name={name}
+        checked={checked}
+        onChange={onSelect}
+        className="size-4 shrink-0 cursor-pointer appearance-none rounded-full border border-foreground/25 bg-transparent transition-[border-width,border-color] duration-150 ease-(--ease-out) outline-none checked:border-[5px] checked:border-brand"
+      />
       <span className="grid gap-0.5">
         <span className="text-[0.9375rem] font-medium">{label}</span>
-        {hint ? <span className="text-sm text-muted-foreground">{hint}</span> : null}
+        {hint ? <span className="text-[0.8125rem] text-muted-foreground">{hint}</span> : null}
       </span>
     </label>
   );
