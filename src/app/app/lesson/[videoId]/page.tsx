@@ -1,0 +1,88 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
+
+import { OUTPUT_LANGUAGES, type OutputLanguage } from "@/config/enums";
+import { BuildLessonPanel } from "@/features/lesson/components/build-lesson-panel";
+import { LessonScreen } from "@/features/lesson/components/lesson-screen";
+import { requireUser } from "@/lib/auth";
+import { getLessonStatus } from "@/lib/lessons/service";
+import { createClient } from "@/lib/supabase/server";
+import { loadLatestConversation } from "@/lib/tutor/service";
+import { parseStartTime } from "@/lib/youtube/parse-url";
+import { getCachedVideo } from "@/lib/youtube/videos";
+import { parsePreferences, YouTubeVideoId } from "@/types/contracts";
+
+export const metadata: Metadata = { title: "Lesson" };
+
+export default function LessonPage({ params, searchParams }: PageProps<"/app/lesson/[videoId]">) {
+  return (
+    <Suspense fallback={<LessonSkeleton />}>
+      <LessonLoader params={params} searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function LessonLoader({
+  params,
+  searchParams,
+}: {
+  params: PageProps<"/app/lesson/[videoId]">["params"];
+  searchParams: PageProps<"/app/lesson/[videoId]">["searchParams"];
+}) {
+  const [{ videoId: rawId }, query] = await Promise.all([params, searchParams]);
+  const id = YouTubeVideoId.safeParse(rawId);
+  if (!id.success) notFound();
+  const videoId = id.data;
+  const user = await requireUser(`/app/lesson/${videoId}`);
+
+  const supabase = await createClient();
+  const [{ data: profile }, { data: progress }] = await Promise.all([
+    supabase.from("profiles").select("preferences").eq("id", user.id).maybeSingle(),
+    supabase.from("lesson_progress").select("last_position_seconds, output_language").eq("youtube_video_id", videoId).maybeSingle(),
+  ]);
+
+  const langParam = typeof query.lang === "string" ? query.lang : undefined;
+  const language: OutputLanguage = (OUTPUT_LANGUAGES as readonly string[]).includes(langParam ?? "")
+    ? (langParam as OutputLanguage)
+    : ((OUTPUT_LANGUAGES as readonly string[]).includes(progress?.output_language ?? "")
+        ? (progress?.output_language as OutputLanguage)
+        : parsePreferences(profile?.preferences).language);
+
+  const tParam = typeof query.t === "string" ? parseStartTime(query.t) : null;
+  const startSeconds = tParam ?? progress?.last_position_seconds ?? 0;
+
+  const [status, conversation] = await Promise.all([getLessonStatus({ user, videoId, language }), loadLatestConversation(videoId)]);
+  if (!status) {
+    const video = await getCachedVideo(videoId);
+    return <BuildLessonPanel videoId={videoId} language={language} title={video?.title ?? null} />;
+  }
+  const preferences = parsePreferences(profile?.preferences);
+  return (
+    <LessonScreen
+      initial={status}
+      videoId={videoId}
+      language={language}
+      startSeconds={startSeconds}
+      pauseForCheckpoints={preferences.pauseForCheckpoints}
+      defaultStyle={preferences.defaultStyle}
+      initialMessages={conversation?.messages ?? []}
+    />
+  );
+}
+
+function LessonSkeleton() {
+  return (
+    <div aria-hidden className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] lg:gap-8 xl:grid-cols-[minmax(0,1fr)_27rem]">
+      <div className="grid gap-5">
+        <div className="aspect-video animate-pulse rounded-xl bg-muted" />
+        <div className="h-7 w-2/3 animate-pulse rounded-md bg-muted" />
+        <div className="h-40 animate-pulse rounded-xl bg-muted" />
+      </div>
+      <div className="grid content-start gap-3">
+        <div className="h-5 w-1/2 animate-pulse rounded bg-muted" />
+        <div className="h-32 animate-pulse rounded-lg bg-muted" />
+      </div>
+    </div>
+  );
+}

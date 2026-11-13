@@ -1,0 +1,315 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/*
+ * Sapience design tokens.
+ *
+ * Monochrome: ink on paper in the light theme, chalk on a near-black board in the dark one. Every
+ * neutral carries a trace of blue so the single accent, sapphire, belongs to the same family.
+ * Sapphire is spent sparingly: the playhead, progress, the current chapter, selection, links and
+ * focus. Primary buttons are ink (black on light, white on dark), so sapphire never has to shout.
+ * `--margin` (red) is reserved for wrong answers and warnings.
+ */
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-literata), ui-serif, Georgia, serif;
+  --font-heading: var(--font-literata), ui-serif, Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Type scale for serif headings. Weight is always 500 (font-medium); size carries hierarchy. */
+  --text-display: clamp(2.375rem, 1.7rem + 2.6vw, 3.5rem);
+  --text-display--line-height: 1.04;
+  --text-display--letter-spacing: -0.03em;
+  --text-title: clamp(2rem, 1.7rem + 1.2vw, 2.5rem);
+  --text-title--line-height: 1.12;
+  --text-title--letter-spacing: -0.02em;
+  --text-heading: clamp(1.625rem, 1.4rem + 0.9vw, 2.125rem);
+  --text-heading--line-height: 1.15;
+  --text-heading--letter-spacing: -0.015em;
+
+  --color-paper: var(--paper);
+  --color-margin: var(--margin);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
+  --color-rule: var(--rule);
+  --color-board: var(--board);
+  --color-chalk: var(--chalk);
+  --color-chalk-muted: var(--chalk-muted);
+  --color-sapphire: var(--sapphire);
+  --color-surface: var(--surface);
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Radius by size: controls 8–10, cards 14, panels 18. Nested radius = outer − padding. */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* Ink on paper */
+  --paper: #fbfbfc;
+  --background: #fbfbfc;
+  --surface: #f4f5f7;
+  --foreground: #0d0f14;
+  --card: #ffffff;
+  --card-foreground: #0d0f14;
+  --popover: #ffffff;
+  --popover-foreground: #0d0f14;
+  --sapphire: #1f4fd1;
+  --primary: #1f4fd1;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f2f5;
+  --secondary-foreground: #0d0f14;
+  --muted: #f1f2f5;
+  --muted-foreground: #5d6270;
+  --accent: #edf1fd;
+  --accent-foreground: #1a3fa8;
+  --destructive: #c42b3c;
+  --border: #e3e5ea;
+  --input: #d4d7de;
+  --ring: #1f4fd1;
+  --rule: #e3e5ea;
+  --margin: #c8364b;
+  --highlight: #d6e0ff;
+  --highlight-foreground: #0d0f14;
+  --board: #14161b;
+  --chalk: #eef0f4;
+  --chalk-muted: #9ba1ae;
+  --radius: 0.625rem;
+
+  /* The marketing shader reads these (Threads lines and their frayed ends). */
+  --shader-ink: #0d0f14;
+  --shader-accent: #1f4fd1;
+
+  /* Motion: one ease-out curve for UI (unslop tokens / Emil Kowalski), one for on-screen movement. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+
+  --chart-1: #1f4fd1;
+  --chart-2: #6f8ee6;
+  --chart-3: #0d0f14;
+  --chart-4: #9ba1ae;
+  --chart-5: #c8364b;
+  --sidebar: #f4f5f7;
+  --sidebar-foreground: #0d0f14;
+  --sidebar-primary: #0d0f14;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #edf1fd;
+  --sidebar-accent-foreground: #1a3fa8;
+  --sidebar-border: #e3e5ea;
+  --sidebar-ring: #1f4fd1;
+}
+
+.dark {
+  /* Chalk on a near-black board */
+  --paper: #0a0b0d;
+  --background: #0a0b0d;
+  --surface: #0e0f12;
+  --foreground: #f1f2f4;
+  --card: #111215;
+  --card-foreground: #f1f2f4;
+  --popover: #16171b;
+  --popover-foreground: #f1f2f4;
+  --sapphire: #8aa4ff;
+  --primary: #8aa4ff;
+  --primary-foreground: #06080f;
+  --secondary: #1a1b1f;
+  --secondary-foreground: #f1f2f4;
+  --muted: #1a1b1f;
+  --muted-foreground: #9a9ea8;
+  --accent: #161c2e;
+  --accent-foreground: #c3d0ff;
+  --destructive: #f2727f;
+  --border: rgb(241 242 244 / 0.09);
+  --input: rgb(241 242 244 / 0.14);
+  --ring: #8aa4ff;
+  --rule: rgb(241 242 244 / 0.07);
+  --margin: #f07c88;
+  --highlight: #a8baff;
+  --highlight-foreground: #06080f;
+  --board: #16181d;
+  --chalk: #eef0f4;
+  --chalk-muted: #9aa1ad;
+
+  --shader-ink: #f1f2f4;
+  --shader-accent: #6f8fff;
+
+  --chart-1: #8aa4ff;
+  --chart-2: #4f6fd9;
+  --chart-3: #f1f2f4;
+  --chart-4: #9a9ea8;
+  --chart-5: #f07c88;
+  --sidebar: #0e0f12;
+  --sidebar-foreground: #f1f2f4;
+  --sidebar-primary: #f1f2f4;
+  --sidebar-primary-foreground: #0a0b0d;
+  --sidebar-accent: #161c2e;
+  --sidebar-accent-foreground: #c3d0ff;
+  --sidebar-border: rgb(241 242 244 / 0.09);
+  --sidebar-ring: #8aa4ff;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv11", "ss01";
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-heading);
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--sapphire) 26%, transparent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Study notes and tutor answers rendered from Markdown. Serif body, quiet structure. */
+  .prose-notes {
+    font-family: var(--font-serif);
+    font-size: 0.9688rem;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+  }
+  .prose-notes > * + * {
+    margin-top: 0.75em;
+  }
+  .prose-notes h1,
+  .prose-notes h2,
+  .prose-notes h3,
+  .prose-notes h4 {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.4;
+    margin-top: 1.4em;
+  }
+  .prose-notes > :first-child {
+    margin-top: 0;
+  }
+  .prose-notes ul,
+  .prose-notes ol {
+    padding-left: 1.25em;
+  }
+  .prose-notes ul {
+    list-style: disc;
+  }
+  .prose-notes ol {
+    list-style: decimal;
+  }
+  .prose-notes li + li {
+    margin-top: 0.3em;
+  }
+  .prose-notes li::marker {
+    color: var(--muted-foreground);
+  }
+  .prose-notes strong {
+    font-weight: 600;
+  }
+  .prose-notes code {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.85em;
+    background: var(--muted);
+    border-radius: 4px;
+    padding: 0.1em 0.3em;
+  }
+  .prose-notes pre {
+    overflow-x: auto;
+    background: var(--muted);
+    border-radius: 8px;
+    padding: 0.75em 1em;
+  }
+  .prose-notes pre code {
+    background: none;
+    padding: 0;
+  }
+  .prose-notes blockquote {
+    border-left: 2px solid var(--border);
+    padding-left: 0.9em;
+    color: var(--muted-foreground);
+  }
+  .prose-notes table {
+    display: block;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+  }
+  .prose-notes th,
+  .prose-notes td {
+    border: 1px solid var(--border);
+    padding: 0.35em 0.6em;
+    text-align: left;
+  }
+  .prose-notes .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.25em 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
