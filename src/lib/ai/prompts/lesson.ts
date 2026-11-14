@@ -30,7 +30,7 @@ Rules:
 
 const DETAIL_RULES = `For each chapter:
 - summary: 1–3 sentences on what the chapter teaches.
-- notesMarkdown: clear study notes in Markdown (short headings, bullet points, worked steps the lecturer shows). No HTML.
+- notesMarkdown: clear study notes in Markdown (short headings, bullet points, worked steps the lecturer shows). Put every heading and every bullet on its own line, with real line breaks. No HTML.
 - keyTerms: up to 15 terms the lecturer introduces or relies on.
 - formulas: up to 10 formulas the lecturer writes or states, as LaTeX.
 - keyMoments: up to 10 moments worth jumping back to (a definition, a derivation step, an example), with the second they happen.

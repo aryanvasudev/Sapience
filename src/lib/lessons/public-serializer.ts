@@ -14,8 +14,31 @@ import type { ChapterPublic, KeyMoment, LessonPublic, QuestionPublic, Segment } 
  * lowercase letter stays, so LaTeX such as `\nabla` or `\neq` survives. Pure.
  */
 export function fixEscapedNewlines(markdown: string): string {
-  if (markdown.includes("\n") || !markdown.includes("\\n")) return markdown;
-  return markdown.replace(/\\r\\n|\\n(?![a-z])/g, "\n").replace(/\\t/g, "  ");
+  if (markdown.includes("\n")) return markdown;
+  if (markdown.includes("\\n")) return markdown.replace(/\\r\\n|\\n(?![a-z])/g, "\n").replace(/\\t/g, "  ");
+  return restoreLineBreaks(markdown);
+}
+
+/**
+ * Notes a model wrote on one line ("### Setup. Key points: - one - two ### Next …"): each heading
+ * starts a new block and ends at its first sentence, each " - " or " 1. " item starts a new line.
+ * Only used on notes without any line break. Pure.
+ */
+function restoreLineBreaks(markdown: string): string {
+  if (!/#{1,6}\s|\s-\s/.test(markdown)) return markdown;
+  return markdown
+    .replace(/\s+(#{1,6}\s)/g, "\n\n$1")
+    .split("\n")
+    .map((line) =>
+      line
+        // A heading's title is its first sentence; the rest is body text.
+        .replace(/^(#{1,6}\s[^\n]*?[.!?])\s+(?=\S)/, "$1\n\n")
+        .replace(/\s+-\s+(?=\S)/g, "\n- ")
+        .replace(/(?<=[.!?:])\s+(\d{1,2}\.\s)(?=\S)/g, "\n$1")
+        .replace(/(?<=[^\n])\n- /, "\n\n- "),
+    )
+    .join("\n")
+    .trim();
 }
 
 export type LessonRow = {
