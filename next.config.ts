@@ -54,6 +54,12 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,
+  experimental: {
+    // The persistent build cache (restored by Vercel from .next/cache) served a stale compile of
+    // globals.css after the Tailwind tokens changed, so a deploy shipped the old stylesheet with
+    // the new layout and every font fell back to the browser default. Builds start cold instead.
+    turbopackFileSystemCacheForBuild: false,
+  },
   images: {
     remotePatterns: [{ protocol: "https", hostname: "i.ytimg.com", pathname: "/vi/**" }],
   },
