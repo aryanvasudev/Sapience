@@ -2,7 +2,7 @@ import "server-only";
 
 /** `full` job: whole short video (≤ LESSON_SINGLE_PASS_MAX_MINUTES) in one pass → FullLesson. */
 import { serverEnv } from "@/env";
-import { generateValidated } from "@/lib/ai/generate";
+import { generateValidatedOnVideoChain } from "@/lib/ai/generate";
 import { fullLessonPrompt } from "@/lib/ai/prompts/lesson";
 import { models, youtubePart } from "@/lib/ai/provider";
 import { FullLessonSchema, type FullLesson } from "@/lib/ai/schemas/lesson";
@@ -30,18 +30,18 @@ export function validateFullLesson(lesson: FullLesson, durationSeconds: number):
 }
 
 export async function runFull(lesson: LessonContext): Promise<RunnerResult> {
-  const spec = models.video();
-  if (!spec) throw new Error("No video model configured");
+  const chain = models.videoChain();
+  if (chain.length === 0) throw new Error("No video model configured");
   const env = serverEnv();
   const prompt = fullLessonPrompt({ language: lesson.language, durationSeconds: lesson.durationSeconds });
 
-  const { value, usage } = await generateValidated(
+  const { value, usage, spec } = await generateValidatedOnVideoChain(
+    chain,
     {
-      spec,
       kind: "full",
       schema: FullLessonSchema,
       instructions: prompt.instructions,
-      content: [youtubePart(lesson.youtubeVideoId, spec, undefined, env.LESSON_DETAIL_FPS), { type: "text", text: prompt.text }],
+      content: (spec) => [youtubePart(lesson.youtubeVideoId, spec, undefined, env.LESSON_DETAIL_FPS), { type: "text", text: prompt.text }],
       tuning: { mediaResolution: "MEDIA_RESOLUTION_LOW" },
       forVideo: true,
       record: { lessonId: lesson.id },

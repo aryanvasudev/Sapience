@@ -49,3 +49,33 @@ export async function dispatchNext(lessonId?: string): Promise<number> {
   const results = await Promise.all(ids.map((id) => dispatchJob(id)));
   return results.filter(Boolean).length;
 }
+
+/** Mirrors `lesson_jobs` in SQL: a claim needs attempts < 3, and a lock older than 6 minutes is stale. */
+const MAX_ATTEMPTS = 3;
+const STALE_LOCK_MS = 6 * 60_000;
+
+/**
+ * A job whose run died without reporting back (the function was killed, the server restarted)
+ * stays `running`. With attempts left, `dispatchable_jobs` re-dispatches it once the lock is stale;
+ * on its last attempt nothing ever would, and the lesson would show "building" forever. Fail those,
+ * so the lesson settles and the student gets a retry. Called by the watchdog.
+ */
+export async function failAbandonedJobs(lessonId: string): Promise<void> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("lesson_jobs")
+    .select("id")
+    .eq("lesson_id", lessonId)
+    .eq("status", "running")
+    .gte("attempts", MAX_ATTEMPTS)
+    .lt("locked_at", new Date(Date.now() - STALE_LOCK_MS).toISOString());
+  if (error) {
+    console.error("[jobs] abandoned-job check failed:", error.code);
+    return;
+  }
+  await Promise.all(
+    (data ?? []).map((job) =>
+      admin.rpc("fail_lesson_job", { p_job_id: job.id, p_error_code: "model_timeout", p_retry_delay_seconds: 0 }),
+    ),
+  );
+}

@@ -9,7 +9,7 @@ import "server-only";
 import { z } from "zod";
 
 import { serverEnv } from "@/env";
-import { generateStructuredWithFallback, generateValidated, InvalidLessonOutputError } from "@/lib/ai/generate";
+import { generateStructuredWithFallback, generateValidatedOnVideoChain, InvalidLessonOutputError } from "@/lib/ai/generate";
 import { chaptersPrompt, transcriptChaptersPrompt } from "@/lib/ai/prompts/lesson";
 import { capabilities, models, youtubePart } from "@/lib/ai/provider";
 import { ChapterBatchSchema, TranscriptChapterBatchSchema, type ChapterDetail } from "@/lib/ai/schemas/lesson";
@@ -124,20 +124,20 @@ export async function runChapters(lesson: LessonContext, job: JobRow): Promise<R
     return { usage, spec };
   }
 
-  const spec = models.video();
-  if (!spec) throw new Error("No video model configured");
+  const chain = models.videoChain();
+  if (chain.length === 0) throw new Error("No video model configured");
   const env = serverEnv();
   const clipping = capabilities().videoClipping;
   const range = { startSeconds: payload.startSeconds, endSeconds: payload.endSeconds };
   const prompt = chaptersPrompt({ language: lesson.language, overview, chapters, statedRange: clipping ? null : range });
 
-  const { value, usage } = await generateValidated(
+  const { value, usage, spec } = await generateValidatedOnVideoChain(
+    chain,
     {
-      spec,
       kind: "chapters",
       schema: ChapterBatchSchema,
       instructions: prompt.instructions,
-      content: [
+      content: (spec) => [
         youtubePart(lesson.youtubeVideoId, spec, clipping ? range : undefined, env.LESSON_DETAIL_FPS),
         { type: "text", text: prompt.text },
       ],

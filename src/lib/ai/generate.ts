@@ -129,6 +129,48 @@ export async function generateValidated<S extends z.ZodType, T>(
   return { value: rechecked.value, usage };
 }
 
+/**
+ * A model that isn't the last in its video chain gets this long before the next one takes over.
+ * A busy model can hold a video request open for minutes without answering; this keeps room for
+ * the next model inside the job's 300 s budget.
+ */
+const VIDEO_HANDOVER_TIMEOUT_MS = 120_000;
+
+/** A timeout or a server-side error is the model's problem, not the video's: try the next one. */
+function handsOverToNextVideoModel(error: unknown): boolean {
+  if (jobErrorCode(error) === "model_timeout") return true;
+  const root = rootError(error);
+  return APICallError.isInstance(root) && root.statusCode !== undefined && root.statusCode >= 500;
+}
+
+/**
+ * Validated video call down the video chain (main → lite on Gemini). A model that is out of quota,
+ * overloaded, failing server-side or silent past `VIDEO_HANDOVER_TIMEOUT_MS` hands over to the next one. `content` is
+ * built per model because the video part depends on the provider.
+ */
+export async function generateValidatedOnVideoChain<S extends z.ZodType, T>(
+  chain: ModelSpec[],
+  args: Omit<StructuredArgs<S>, "spec" | "content" | "timeoutMs"> & { content: (spec: ModelSpec) => UserContent },
+  validate: (output: z.infer<S>) => { ok: true; value: T } | { ok: false; problems: string[] },
+): Promise<{ value: T; usage: Usage; spec: ModelSpec }> {
+  const result = await withFallback(
+    chain,
+    (spec) =>
+      generateValidated(
+        {
+          ...args,
+          spec,
+          content: args.content(spec),
+          ...(spec !== chain[chain.length - 1] ? { timeoutMs: VIDEO_HANDOVER_TIMEOUT_MS } : {}),
+          record: { ...args.record, fallbackFrom: spec === chain[0] ? null : chain[0] },
+        },
+        validate,
+      ),
+    { fallBackOn: handsOverToNextVideoModel },
+  );
+  return { ...result.value, spec: result.model };
+}
+
 /** Text-tier structured call down the fallback chain (main → lite → OpenRouter). */
 export async function generateStructuredWithFallback<S extends z.ZodType>(
   chain: ModelSpec[],

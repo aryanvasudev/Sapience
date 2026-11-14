@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { byokCapabilities, byokTextChain, byokVideoSpec } from "@/lib/ai/capabilities";
+import { byokCapabilities, byokTextChain, byokVideoChain, byokVideoSpec } from "@/lib/ai/capabilities";
 
 const env = {
   GEMINI_MODEL: "gemini-main",
@@ -31,6 +31,17 @@ describe("bring your own key: model chains", () => {
     expect(byokCapabilities(env, "gemini")).toEqual({ videoLessons: true, videoClipping: true, tutorClip: true, agenticVideo: true });
     const or = byokCapabilities({ ...env, OPENROUTER_VIDEO_MODEL: "or-video" }, "openrouter");
     expect(or).toEqual({ videoLessons: true, videoClipping: false, tutorClip: false, agenticVideo: true });
+  });
+
+  it("a Gemini key's video chain is main then lite, both on the key", () => {
+    expect(byokVideoChain(env, "gemini")).toEqual([
+      { provider: "gemini", modelId: "gemini-main", byok: true },
+      { provider: "gemini", modelId: "gemini-lite", byok: true },
+    ]);
+    expect(byokVideoChain(env, "openrouter")).toEqual([]);
+    expect(byokVideoChain({ ...env, OPENROUTER_VIDEO_MODEL: "or-video" }, "openrouter")).toEqual([
+      { provider: "openrouter", modelId: "or-video", byok: true },
+    ]);
   });
 
   it("specs never carry the key", () => {

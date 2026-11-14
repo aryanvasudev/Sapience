@@ -69,6 +69,21 @@ export function videoModelSpec(env: AiEnv): ModelSpec | null {
   return null;
 }
 
+/**
+ * Video models to try in order. On Gemini the lite model watches YouTube too, so it backs up the
+ * main model when that one is out of quota or not answering; OpenRouter has one video model.
+ */
+export function videoModelChain(env: AiEnv): ModelSpec[] {
+  const main = videoModelSpec(env);
+  if (!main) return [];
+  return withGeminiLite(main, env.GEMINI_LITE_MODEL);
+}
+
+function withGeminiLite(main: ModelSpec, liteModelId: string | undefined): ModelSpec[] {
+  if (main.provider !== "gemini" || !liteModelId || liteModelId === main.modelId) return [main];
+  return [main, { ...main, modelId: liteModelId }];
+}
+
 // ---------------------------------------------------------------------------
 // Bring your own key (Section 4.5.4)
 // ---------------------------------------------------------------------------
@@ -95,6 +110,12 @@ export function byokTextChain(env: ModelEnv, provider: AiProviderName, tier: "ma
 export function byokVideoSpec(env: ModelEnv, provider: AiProviderName): ModelSpec | null {
   if (provider === "gemini") return { provider, modelId: env.GEMINI_MODEL, byok: true };
   return env.OPENROUTER_VIDEO_MODEL ? { provider, modelId: env.OPENROUTER_VIDEO_MODEL, byok: true } : null;
+}
+
+/** Video chain on a student's key: main then lite on Gemini, never the app's key. */
+export function byokVideoChain(env: ModelEnv, provider: AiProviderName): ModelSpec[] {
+  const main = byokVideoSpec(env, provider);
+  return main ? withGeminiLite(main, env.GEMINI_LITE_MODEL) : [];
 }
 
 /** What the app can do for a student with their own key of this provider. */

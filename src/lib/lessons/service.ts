@@ -12,7 +12,7 @@ import { byokEnabled, lessonKey, userKeyFor } from "@/lib/ai/byok";
 import { capabilities, runWithUserKey } from "@/lib/ai/provider";
 import type { CurrentUser } from "@/lib/auth";
 import { AppError } from "@/lib/errors";
-import { dispatchNext } from "@/lib/jobs/dispatch";
+import { dispatchNext, failAbandonedJobs } from "@/lib/jobs/dispatch";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { parseTranscript, type TranscriptLine } from "@/lib/transcript/parse";
@@ -162,7 +162,7 @@ async function nudge(lessonId: string) {
     .eq("id", lessonId)
     .or(`last_nudged_at.is.null,last_nudged_at.lt.${cutoff}`)
     .select("id");
-  if (data && data.length > 0) await dispatchNext(lessonId);
+  if (data && data.length > 0) await Promise.all([failAbandonedJobs(lessonId), dispatchNext(lessonId)]);
 }
 
 /**

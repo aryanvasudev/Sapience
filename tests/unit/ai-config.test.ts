@@ -2,7 +2,7 @@ import { APICallError, RetryError } from "ai";
 import { describe, expect, it, vi } from "vitest";
 
 import { parseServerEnv } from "@/env";
-import { capabilitiesFor, textModelChain, videoModelSpec, type ModelSpec } from "@/lib/ai/capabilities";
+import { capabilitiesFor, textModelChain, videoModelChain, videoModelSpec, type ModelSpec } from "@/lib/ai/capabilities";
 import { AiBusyError, isRateLimitError, jobErrorCode, retryAfterSeconds } from "@/lib/ai/errors";
 import { withFallback } from "@/lib/ai/fallback";
 import { InvalidLessonOutputError } from "@/lib/ai/generate";
@@ -113,6 +113,19 @@ describe("videoModelSpec", () => {
     expect(videoModelSpec(SETUP_B)).toEqual(openrouter("google/gemini-video"));
     expect(videoModelSpec(SETUP_C)).toBeNull();
     expect(videoModelSpec(SETUP_D)).toEqual(gemini("gemini-3.8-flash"));
+  });
+});
+
+describe("videoModelChain", () => {
+  it("Gemini backs the main video model with the lite one; OpenRouter has one; C none", () => {
+    expect(videoModelChain(SETUP_A)).toEqual([gemini("gemini-3.8-flash"), gemini("gemini-3.5-flash-lite")]);
+    expect(videoModelChain(SETUP_B)).toEqual([openrouter("google/gemini-video")]);
+    expect(videoModelChain(SETUP_C)).toEqual([]);
+  });
+
+  it("no duplicate when lite and main are the same model", () => {
+    const same = parseServerEnv({ ...BASE, GOOGLE_GENERATIVE_AI_API_KEY: "g", GEMINI_MODEL: "m", GEMINI_LITE_MODEL: "m" });
+    expect(videoModelChain(same)).toEqual([gemini("m")]);
   });
 });
 
@@ -324,6 +337,33 @@ describe("withFallback", () => {
         throw rateLimited();
       }),
     ).rejects.toMatchObject({ retryAfterSeconds: null });
+  });
+
+  it("fallBackOn lets other errors (a timeout) fall back too", async () => {
+    const timeout = new DOMException("timed out", "TimeoutError");
+    const result = await withFallback(
+      CHAIN,
+      async (model) => {
+        if (model === "main") throw timeout;
+        return `answer from ${model}`;
+      },
+      { fallBackOn: (error) => error === timeout },
+    );
+    expect(result.model).toBe("lite");
+    expect(result.fallbackFrom).toBe("main");
+  });
+
+  it("a chain that ran out after a fallBackOn error throws that error, not AiBusyError", async () => {
+    const timeout = new DOMException("timed out", "TimeoutError");
+    const promise = withFallback(
+      CHAIN,
+      async (model) => {
+        if (model === "lite") throw timeout;
+        throw rateLimited();
+      },
+      { fallBackOn: (error) => error === timeout },
+    );
+    await expect(promise).rejects.toBe(timeout);
   });
 
   it("rejects an empty chain", async () => {

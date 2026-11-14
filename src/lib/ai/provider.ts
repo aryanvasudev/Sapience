@@ -21,9 +21,11 @@ import type { Capabilities } from "@/types/contracts";
 import {
   byokCapabilities,
   byokTextChain,
+  byokVideoChain,
   byokVideoSpec,
   capabilitiesFor,
   textModelChain,
+  videoModelChain,
   videoModelSpec,
   type AiProviderName,
   type ModelSpec,
@@ -57,13 +59,20 @@ export function capabilities(): Capabilities {
   return key ? byokCapabilities(serverEnv(), key.provider) : capabilitiesFor(serverEnv());
 }
 
-/** Model chains by role. `main`/`lite` are fallback chains; `video` is a single model or null. */
+/**
+ * Model chains by role. `main`/`lite` are text fallback chains. `video` is the preferred video
+ * model or null; `videoChain` is every model that can watch the video, in order (lesson builds).
+ */
 export const models = {
   main: (): ModelSpec[] => chain("main"),
   lite: (): ModelSpec[] => chain("lite"),
   video: (): ModelSpec | null => {
     const key = userKeyContext.getStore();
     return key ? byokVideoSpec(serverEnv(), key.provider) : videoModelSpec(serverEnv());
+  },
+  videoChain: (): ModelSpec[] => {
+    const key = userKeyContext.getStore();
+    return key ? byokVideoChain(serverEnv(), key.provider) : videoModelChain(serverEnv());
   },
 };
 
