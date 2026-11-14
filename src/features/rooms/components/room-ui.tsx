@@ -51,6 +51,3 @@ export function FormError({ message }: { message: string | null }) {
     </p>
   ) : null;
 }
-
-export const SELECT_CLASS =
-  "h-11 w-full min-w-0 rounded-lg border border-input bg-card px-3 text-base outline-none transition-[border-color,box-shadow] duration-150 ease-(--ease-out) focus-visible:border-brand/60 focus-visible:ring-[3px] focus-visible:ring-brand/15 md:h-10 md:text-sm dark:bg-input/30";

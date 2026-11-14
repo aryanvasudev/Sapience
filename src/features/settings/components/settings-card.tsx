@@ -114,7 +114,3 @@ export function SettingsResultText({ result, className }: { result: { ok: boolea
     </p>
   );
 }
-
-/** A select styled to match the inputs, with the chevron from the icon set. */
-export const selectClassName =
-  "h-11 w-full cursor-pointer appearance-none rounded-[10px] border border-input bg-card pr-9 pl-3 text-sm text-foreground transition-colors duration-150 ease-(--ease-out) outline-none focus-visible:ring-2 focus-visible:ring-ring md:h-10 dark:bg-input/30 [@media(hover:hover)]:hover:bg-muted";

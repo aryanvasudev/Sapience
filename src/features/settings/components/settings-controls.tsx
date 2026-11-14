@@ -2,10 +2,8 @@
 
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 
-import { KeyboardArrowDownIcon } from "@/components/icons";
+import { SelectField as SelectMenu } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-
-import { selectClassName } from "./settings-card";
 
 /**
  * Radio buttons drawn as a segmented control; the selected surface glides between options.
@@ -101,24 +99,5 @@ export function SelectField<T extends string>({
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
 }) {
-  return (
-    <div className="relative">
-      <select
-        id={id}
-        value={value}
-        onChange={(e) => {
-          const next = options.find((o) => o.value === e.target.value);
-          if (next) onChange(next.value);
-        }}
-        className={selectClassName}
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-      <KeyboardArrowDownIcon className="pointer-events-none absolute top-1/2 right-2.5 size-4.5 -translate-y-1/2 text-faint" />
-    </div>
-  );
+  return <SelectMenu id={id} value={value} options={options} onValueChange={onChange} className="h-11 bg-card md:h-10" />;
 }

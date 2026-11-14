@@ -3,9 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 
-import { ArrowForwardIcon, KeyboardArrowDownIcon, LinkIcon } from "@/components/icons";
+import { ArrowForwardIcon, LinkIcon } from "@/components/icons";
 import { MorphText } from "@/components/motion/morph-text";
 import { Button } from "@/components/ui/button";
+import { SelectField } from "@/components/ui/select";
 import { OUTPUT_LANGUAGE_NAMES, OUTPUT_LANGUAGES, type LessonStatus, type OutputLanguage } from "@/config/enums";
 import { FOCUS_PASTE_BOX_EVENT } from "@/features/dashboard/events";
 import { StepList, type ListStep } from "@/features/lesson/components/journey";
@@ -127,21 +128,13 @@ export function PasteBox({ defaultLanguage, videoLessons }: { defaultLanguage: O
           <label htmlFor={`${id}-lang`} className="sr-only">
             Lesson language
           </label>
-          <div className="relative flex-1 sm:flex-none">
-            <select
-              id={`${id}-lang`}
-              value={language}
-              onChange={(e) => setLanguage(e.target.value as OutputLanguage)}
-              className="h-11 w-full cursor-pointer appearance-none rounded-[10px] border border-transparent bg-raised pr-9 pl-3.5 text-sm text-foreground transition-colors duration-150 ease-(--ease-out) outline-none focus-visible:ring-2 focus-visible:ring-ring [@media(hover:hover)]:hover:border-border"
-            >
-              {OUTPUT_LANGUAGES.map((lang) => (
-                <option key={lang} value={lang}>
-                  {OUTPUT_LANGUAGE_NAMES[lang]}
-                </option>
-              ))}
-            </select>
-            <KeyboardArrowDownIcon className="pointer-events-none absolute top-1/2 right-2.5 size-4.5 -translate-y-1/2 text-faint" />
-          </div>
+          <SelectField<OutputLanguage>
+            id={`${id}-lang`}
+            value={language}
+            onValueChange={setLanguage}
+            options={OUTPUT_LANGUAGES.map((lang) => ({ value: lang, label: OUTPUT_LANGUAGE_NAMES[lang] }))}
+            className="h-11 flex-1 border-transparent bg-raised pl-3.5 sm:w-auto sm:min-w-32 sm:flex-none dark:bg-raised [@media(hover:hover)]:hover:border-border [@media(hover:hover)]:hover:bg-raised dark:[@media(hover:hover)]:hover:bg-raised"
+          />
           <Button type="submit" disabled={pending || url.trim().length === 0} className="h-11 rounded-[10px] px-4 md:h-11">
             <MorphText>{!pending ? "Build lesson" : phase?.step === "opening" ? "Opening…" : "Checking…"}</MorphText>
             {pending ? null : <ArrowForwardIcon data-icon="inline-end" />}

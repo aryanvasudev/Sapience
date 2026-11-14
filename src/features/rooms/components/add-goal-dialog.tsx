@@ -6,9 +6,10 @@ import { AddIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { SelectField } from "@/components/ui/select";
 
 import { addGoal } from "../actions";
-import { Field, FormError, SELECT_CLASS } from "./room-ui";
+import { Field, FormError } from "./room-ui";
 
 export type LecturePick = { videoId: string; title: string };
 
@@ -64,15 +65,18 @@ export function AddGoalDialog({ roomId, lectures }: { roomId: string; lectures: 
           }}
         >
           <Field id={`${id}-lecture`} label="Lecture (optional)">
-            <select id={`${id}-lecture`} value={lecture} onChange={(e) => setLecture(e.target.value)} className={SELECT_CLASS}>
-              <option value="">No lecture, just a goal</option>
-              {lectures.map((l) => (
-                <option key={l.videoId} value={l.videoId}>
-                  {l.title}
-                </option>
-              ))}
-              <option value={PASTE}>Paste a YouTube link…</option>
-            </select>
+            <SelectField
+              id={`${id}-lecture`}
+              value={lecture}
+              onValueChange={setLecture}
+              options={[
+                { value: "", label: "No lecture, just a goal" },
+                ...lectures.map((l) => ({ value: l.videoId, label: l.title })),
+                { value: PASTE, label: "Paste a YouTube link…", separated: true },
+              ]}
+              className="h-11 bg-card md:h-10"
+              contentClassName="w-(--radix-select-trigger-width)"
+            />
           </Field>
           {lecture === PASTE ? (
             <Field id={`${id}-url`} label="YouTube link">

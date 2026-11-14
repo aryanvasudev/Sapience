@@ -6,6 +6,7 @@ import { ArrowOutwardIcon, CheckCircleIcon, EditCalendarIcon } from "@/component
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { SelectField } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { clientEnv } from "@/env-client";
 import { googleCalendarUrl, lessonPath } from "@/lib/calendar/links";
@@ -19,8 +20,8 @@ export type LectureOption = { videoId: string; title: string; positionSeconds: n
 
 const DURATIONS = [25, 45, 60, 90, 120];
 
-const SELECT =
-  "h-11 w-full min-w-0 rounded-lg border border-input bg-card px-3 text-base outline-none transition-[border-color,box-shadow] duration-150 ease-(--ease-out) focus-visible:border-brand/60 focus-visible:ring-[3px] focus-visible:ring-brand/15 md:h-10 md:text-sm dark:bg-input/30";
+const durationLabel = (d: number) =>
+  d < 60 ? `${d} min` : d % 60 === 0 ? `${d / 60} h` : `${Math.floor(d / 60)} h ${d % 60} min`;
 
 /** The absolute "open in Sapience" link for an event's lecture, if it has one. */
 export function eventLectureUrl(event: StudyEvent): string | null {
@@ -176,14 +177,17 @@ function PlanForm({
           <label htmlFor={`${id}-lecture`} className="text-sm font-medium">
             Lecture <span className="font-normal text-faint">(optional)</span>
           </label>
-          <select id={`${id}-lecture`} value={videoId} onChange={(e) => setVideoId(e.target.value)} className={SELECT}>
-            <option value="">No lecture</option>
-            {lectures.map((l) => (
-              <option key={l.videoId} value={l.videoId}>
-                {l.title.length > 70 ? `${l.title.slice(0, 69)}…` : l.title}
-              </option>
-            ))}
-          </select>
+          <SelectField
+            id={`${id}-lecture`}
+            value={videoId}
+            onValueChange={setVideoId}
+            options={[
+              { value: "", label: "No lecture" },
+              ...lectures.map((l) => ({ value: l.videoId, label: l.title.length > 70 ? `${l.title.slice(0, 69)}…` : l.title })),
+            ]}
+            className="h-11 bg-card md:h-10"
+            contentClassName="w-(--radix-select-trigger-width)"
+          />
           {lecture && lecture.positionSeconds > 0 ? (
             <p className="text-[0.8125rem] text-muted-foreground">
               Opens where you stopped, at <span className="font-mono tabular-nums">{formatTimestamp(lecture.positionSeconds)}</span>.
@@ -221,13 +225,13 @@ function PlanForm({
             <label htmlFor={`${id}-duration`} className="text-sm font-medium">
               Length
             </label>
-            <select id={`${id}-duration`} value={duration} onChange={(e) => setDuration(Number(e.target.value))} className={SELECT}>
-              {DURATIONS.map((d) => (
-                <option key={d} value={d}>
-                  {d < 60 ? `${d} min` : d % 60 === 0 ? `${d / 60} h` : `${Math.floor(d / 60)} h ${d % 60} min`}
-                </option>
-              ))}
-            </select>
+            <SelectField
+              id={`${id}-duration`}
+              value={String(duration)}
+              onValueChange={(v) => setDuration(Number(v))}
+              options={DURATIONS.map((d) => ({ value: String(d), label: durationLabel(d) }))}
+              className="h-11 bg-card md:h-10"
+            />
           </div>
         </div>
 

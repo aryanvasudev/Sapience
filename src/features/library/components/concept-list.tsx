@@ -4,11 +4,12 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { useId, useOptimistic, useState, useTransition } from "react";
 
-import { DeleteIcon, KeyboardArrowDownIcon, PlayCircleIcon, SearchIcon } from "@/components/icons";
+import { DeleteIcon, PlayCircleIcon, SearchIcon } from "@/components/icons";
 import { CheckpointMark } from "@/components/layout/wordmark";
 import { Markdown } from "@/components/shared/markdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SelectField } from "@/components/ui/select";
 import { formatTimestamp } from "@/lib/format";
 import type { SavedConcept } from "@/lib/library/service";
 import { cn } from "@/lib/utils";
@@ -77,23 +78,17 @@ export function ConceptList({ concepts }: { concepts: SavedConcept[] }) {
           <label htmlFor={`${id}-show`} className="sr-only">
             Show
           </label>
-          <div className="relative">
-            <select
-              id={`${id}-show`}
-              value={show}
-              onChange={(e) => setShow(e.target.value as Show)}
-              className="h-11 cursor-pointer appearance-none rounded-[10px] border border-input bg-card pr-9 pl-3 text-sm text-foreground transition-colors duration-150 ease-(--ease-out) outline-none focus-visible:ring-2 focus-visible:ring-ring md:h-10 dark:bg-input/30 [@media(hover:hover)]:hover:bg-muted"
-            >
-              <option value="all">All</option>
-              <option value="due">Due now</option>
-              {sources.map((s) => (
-                <option key={s} value={s}>
-                  {SOURCE_LABEL[s]}
-                </option>
-              ))}
-            </select>
-            <KeyboardArrowDownIcon className="pointer-events-none absolute top-1/2 right-2.5 size-4.5 -translate-y-1/2 text-faint" />
-          </div>
+          <SelectField<Show>
+            id={`${id}-show`}
+            value={show}
+            onValueChange={setShow}
+            options={[
+              { value: "all", label: "All" },
+              { value: "due", label: "Due now" },
+              ...sources.map((s) => ({ value: s, label: SOURCE_LABEL[s] })),
+            ]}
+            className="h-11 w-auto min-w-36 bg-card md:h-10"
+          />
         </div>
       ) : null}
       {visible.length === 0 ? (
