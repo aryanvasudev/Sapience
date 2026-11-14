@@ -3,7 +3,8 @@
 /**
  * Gradient Waves from React Bits (https://reactbits.dev, @react-bits/GradientWaves-TS-TW).
  * Adapted for Sapience: the settings ref syncs in a layout effect instead of during render
- * (react-hooks/refs). Used as the landing hero backdrop.
+ * (react-hooks/refs), and `maxAspect` caps the fisheye field of view so very wide canvases crop
+ * the scene instead of curving the horizon into empty sky at the edges. Used as the landing hero backdrop.
  */
 
 import { useEffect, useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react';
@@ -22,6 +23,8 @@ export interface GradientWavesProps {
   turbulence?: number;
   tilt?: number;
   zoom?: number;
+  /** Widest aspect ratio the camera frames; wider canvases zoom in (like background-size: cover). 0 = off. */
+  maxAspect?: number;
   height?: number;
   fogDepth?: number;
   relief?: number;
@@ -281,6 +284,10 @@ const rayAt = (point: number[], aspect: number, s: View, look: number[]) => {
   return dir;
 };
 
+// Zoom that keeps the horizontal field of view at what `maxAspect` would show.
+const framedZoom = (s: View & { maxAspect: number }, aspect: number) =>
+  s.maxAspect > 0 ? s.zoom * Math.max(1, aspect / s.maxAspect) : s.zoom;
+
 const groundAt = (point: number[], aspect: number, s: View, look: number[]) => {
   const dir = rayAt(point, aspect, s, look);
   if (dir[2] > -0.02) return null;
@@ -305,6 +312,7 @@ export default function GradientWaves({
   turbulence = 20,
   tilt = 64,
   zoom = 1,
+  maxAspect = 0,
   height = 5.5,
   fogDepth = 15,
   relief = 1,
@@ -344,6 +352,7 @@ export default function GradientWaves({
     turbulence,
     tilt: (clamp(tilt, 10, 85) * Math.PI) / 180,
     zoom: Math.max(0.05, zoom),
+    maxAspect: Math.max(0, maxAspect),
     height,
     fogDepth: Math.max(0.5, fogDepth),
     relief: clamp(relief, 0, 1),
@@ -511,7 +520,7 @@ export default function GradientWaves({
       gl.uniform1f(u.uTurbulence, s.turbulence);
       gl.uniform1f(u.uHeight, s.height);
       gl.uniform1f(u.uTilt, s.tilt);
-      gl.uniform1f(u.uZoom, s.zoom);
+      gl.uniform1f(u.uZoom, framedZoom(s, state.width / Math.max(state.height, 1)));
       gl.uniform2f(u.uLook, state.look[0], state.look[1]);
       gl.uniform1f(u.uFogDepth, s.fogDepth);
       gl.uniform1f(u.uBrightness, s.brightness);
@@ -646,7 +655,8 @@ export default function GradientWaves({
         return;
       const point = local(event);
       if (!point.inside) return;
-      const ground = groundAt([point.x, point.y], state.width / Math.max(state.height, 1), s, state.look);
+      const aspect = state.width / Math.max(state.height, 1);
+      const ground = groundAt([point.x, point.y], aspect, { ...s, zoom: framedZoom(s, aspect) }, state.look);
       if (!ground) return;
       state.swells.push({ x: ground[0], y: ground[1], at: state.clock });
       if (state.swells.length > MAX_SWELLS) state.swells.shift();

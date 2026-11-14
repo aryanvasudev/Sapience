@@ -32,6 +32,7 @@ export function HeroWaves({ className }: { className?: string }) {
         crestColor={light ? "#c08f00" : "#f5cf4a"}
         lightMode={light}
         speed={0.6}
+        maxAspect={1.6}
         brightness={light ? 1 : 1.3}
         swellOnClick={false}
         className="opacity-100 transition-opacity duration-1000 ease-(--ease-out) starting:opacity-0"
