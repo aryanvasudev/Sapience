@@ -5,7 +5,7 @@ import "server-only";
  */
 import { OUTPUT_LANGUAGES, type OutputLanguage } from "@/config/enums";
 import { loadUserKey } from "@/lib/ai/byok";
-import { isRateLimitError, jobErrorCode, retryAfterSeconds } from "@/lib/ai/errors";
+import { isRateLimitError, jobErrorCode, retryAfterSeconds, safeErrorSummary } from "@/lib/ai/errors";
 import { runWithUserKey } from "@/lib/ai/provider";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/types/database";
@@ -92,7 +92,7 @@ export async function runClaimedJob(job: JobRow): Promise<void> {
       await admin.rpc("requeue_lesson_job", { p_job_id: job.id, p_delay_seconds: delay });
     } else {
       const code = jobErrorCode(error);
-      console.error(`[jobs] ${job.kind} job ${job.id} failed (${code}):`, error instanceof Error ? error.name : "unknown");
+      console.error(`[jobs] ${job.kind} job ${job.id} failed (${code}):`, safeErrorSummary(error));
       await admin.rpc("fail_lesson_job", { p_job_id: job.id, p_error_code: code, p_retry_delay_seconds: FAILURE_RETRY_SECONDS });
     }
   } finally {

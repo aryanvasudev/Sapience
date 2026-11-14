@@ -1,14 +1,26 @@
 /**
  * A public video's YouTube captions as timestamped transcript lines, so a lesson can be built
- * with a text model instead of the video model. Uses YouTube's own player endpoint (the Android
- * client, whose caption URLs need no proof-of-origin token). Unofficial: YouTube may change or
- * block it, so every failure returns null and the caller falls back.
+ * with a text model instead of the video model. Uses YouTube's own player endpoint with the
+ * Android client, then the iOS one (both get caption URLs that need no proof-of-origin token).
+ * Unofficial: YouTube may change or block it, so every failure returns null and the caller falls
+ * back. YouTube is known to refuse some cloud servers; the logs say which reason it gave.
  */
 import type { OutputLanguage } from "@/config/enums";
 import type { TranscriptLine } from "@/lib/transcript/parse";
 
 const PLAYER_URL = "https://www.youtube.com/youtubei/v1/player?prettyPrint=false";
-const ANDROID_CLIENT = { clientName: "ANDROID", clientVersion: "20.10.38", hl: "en" };
+const CLIENTS = [
+  { clientName: "ANDROID", clientVersion: "20.10.38", hl: "en" },
+  {
+    clientName: "IOS",
+    clientVersion: "20.10.4",
+    deviceMake: "Apple",
+    deviceModel: "iPhone16,2",
+    osName: "iPhone",
+    osVersion: "18.3.2.22D82",
+    hl: "en",
+  },
+] as const;
 const TIMEOUT_MS = 8_000;
 
 export type CaptionTrack = { baseUrl: string; languageCode: string; kind?: string };
@@ -50,30 +62,46 @@ export function parseJson3(data: Json3): TranscriptLine[] {
   return lines.sort((a, b) => a.seconds - b.seconds);
 }
 
+type PlayerResponse = {
+  playabilityStatus?: { status?: string; reason?: string };
+  captions?: { playerCaptionsTracklistRenderer?: { captionTracks?: CaptionTrack[] } };
+};
+
+/** Caption tracks from the first client YouTube answers with any, or null. */
+async function captionTracks(videoId: string): Promise<CaptionTrack[] | null> {
+  for (const client of CLIENTS) {
+    try {
+      const player = await fetch(PLAYER_URL, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ context: { client }, videoId }),
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+        cache: "no-store",
+      });
+      if (!player.ok) {
+        console.error(`[captions] ${client.clientName} player request failed:`, player.status);
+        continue;
+      }
+      const body = (await player.json()) as PlayerResponse;
+      const tracks = body.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? [];
+      if (tracks.length > 0) return tracks;
+      const status = body.playabilityStatus?.status;
+      // A playable video without tracks really has no captions; another client won't find any.
+      if (status === "OK") return null;
+      // Not OK usually means YouTube is refusing this server (e.g. "Sign in to confirm you're not a bot").
+      console.error(`[captions] ${client.clientName} player status:`, status, (body.playabilityStatus?.reason ?? "").slice(0, 120));
+    } catch (error) {
+      console.error(`[captions] ${client.clientName} player fetch failed:`, error instanceof Error ? error.name : "unknown");
+    }
+  }
+  return null;
+}
+
 /** The video's captions as transcript lines, or null if it has none or YouTube can't be reached. */
 export async function fetchCaptionLines(videoId: string, output: OutputLanguage): Promise<TranscriptLine[] | null> {
   try {
-    const player = await fetch(PLAYER_URL, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ context: { client: ANDROID_CLIENT }, videoId }),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-      cache: "no-store",
-    });
-    if (!player.ok) {
-      console.error("[captions] player request failed:", player.status);
-      return null;
-    }
-    const body = (await player.json()) as {
-      playabilityStatus?: { status?: string };
-      captions?: { playerCaptionsTracklistRenderer?: { captionTracks?: CaptionTrack[] } };
-    };
-    const tracks = body.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? [];
-    if (tracks.length === 0) {
-      // Not OK usually means YouTube is refusing this server, not that the video lacks captions.
-      if (body.playabilityStatus?.status !== "OK") console.error("[captions] player status:", body.playabilityStatus?.status);
-      return null;
-    }
+    const tracks = await captionTracks(videoId);
+    if (!tracks) return null;
 
     const track = pickCaptionTrack(tracks, output);
     if (!track) return null;

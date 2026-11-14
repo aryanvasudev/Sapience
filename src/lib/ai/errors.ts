@@ -82,3 +82,16 @@ export function jobErrorCode(error: unknown): JobErrorCode {
   }
   return "unknown";
 }
+
+/**
+ * A log-safe description of a job error. Provider errors give only their name and HTTP status
+ * (their bodies can echo the prompt); Sapience's own errors (missing model, failed save, chapters
+ * not found) also give their message, which never contains lecture or student text.
+ */
+export function safeErrorSummary(error: unknown): string {
+  const root = rootError(error);
+  if (APICallError.isInstance(root)) return `${root.name} ${root.statusCode ?? "no-status"}`;
+  if (!(root instanceof Error)) return "unknown";
+  if (root.name.startsWith("AI_") || root.name === "InvalidOutputError") return root.name;
+  return `${root.name}: ${root.message.slice(0, 160)}`;
+}
