@@ -62,6 +62,8 @@ export const ServerEnvSchema = z
     ),
 
     LESSON_BUILD_MODE: z.enum(LESSON_BUILD_MODES).default("captions"),
+    /** TranscriptAPI key: transcripts when YouTube refuses this server's caption lookup (tried first). */
+    TRANSCRIPT_API_KEY: optionalString,
     /** youtube-transcript.ai key: transcripts when YouTube refuses this server's caption lookup. */
     YOUTUBE_TRANSCRIPT_AI_KEY: optionalString,
     LESSON_MAX_VIDEO_MINUTES: int(90, 1),

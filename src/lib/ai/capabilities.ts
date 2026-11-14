@@ -37,7 +37,9 @@ export function capabilitiesFor(env: Pick<AiEnv, "AI_VIDEO_PROVIDER">): Capabili
 
 /**
  * Text model chain for `withFallback`: main → lite → OpenRouter (if a key is set), or
- * lite → OpenRouter lite for lite-tier tasks. Duplicates are removed.
+ * lite → OpenRouter lite for lite-tier tasks. With OpenRouter as the text provider, the Gemini
+ * lite model (if a Gemini key is set) comes last, so a used-up free OpenRouter day still answers.
+ * Duplicates are removed.
  */
 export function textModelChain(env: AiEnv, tier: "main" | "lite"): ModelSpec[] {
   const chain: ModelSpec[] = [];
@@ -56,6 +58,7 @@ export function textModelChain(env: AiEnv, tier: "main" | "lite"): ModelSpec[] {
   } else {
     if (tier === "main") add("openrouter", env.OPENROUTER_MODEL);
     add("openrouter", env.OPENROUTER_LITE_MODEL);
+    add("gemini", env.GEMINI_LITE_MODEL);
   }
   return chain;
 }

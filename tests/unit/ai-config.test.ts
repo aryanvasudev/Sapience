@@ -92,11 +92,12 @@ describe("textModelChain", () => {
     expect(textModelChain(env, "main")).toEqual([gemini("gemini-3.8-flash"), gemini("gemini-3.5-flash-lite")]);
   });
 
-  it("B, C and D: OpenRouter main → OpenRouter lite", () => {
+  it("B, C and D: OpenRouter main → OpenRouter lite, then Gemini lite when there's a Gemini key", () => {
     expect(textModelChain(SETUP_B, "main")).toEqual([openrouter("or/main"), openrouter("or/lite")]);
     expect(textModelChain(SETUP_B, "lite")).toEqual([openrouter("or/lite")]);
     expect(textModelChain(SETUP_C, "main")).toEqual([openrouter("or/main:free"), openrouter("or/lite:free")]);
-    expect(textModelChain(SETUP_D, "main")).toEqual([openrouter("or/main"), openrouter("or/lite")]);
+    expect(textModelChain(SETUP_D, "main")).toEqual([openrouter("or/main"), openrouter("or/lite"), gemini("gemini-3.5-flash-lite")]);
+    expect(textModelChain(SETUP_D, "lite")).toEqual([openrouter("or/lite"), gemini("gemini-3.5-flash-lite")]);
   });
 
   it("removes duplicates", () => {

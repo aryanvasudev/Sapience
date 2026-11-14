@@ -19,6 +19,7 @@ import { parseTranscript, type TranscriptLine } from "@/lib/transcript/parse";
 import { segmentTranscript, type TranscriptSegment } from "@/lib/transcript/segment";
 import { fetchCaptionLines } from "@/lib/youtube/captions";
 import { fetchTranscriptAi, parseTranscriptAi } from "@/lib/youtube/transcript-ai";
+import { fetchTranscriptApiLines } from "@/lib/youtube/transcript-api";
 import { parseYouTubeUrl } from "@/lib/youtube/parse-url";
 import { getCachedVideo, getEligibleVideo, toVideoPublic, type VideoRecord } from "@/lib/youtube/videos";
 import type { CreateLessonResponse, LessonStatusResponse } from "@/types/contracts";
@@ -34,17 +35,23 @@ const MIN_TRANSCRIPT_LINES = 5;
 type FirstJob = { kind: "full" | "outline" | "transcript"; payload: Json; source: "gemini_video" | "transcript_paste" };
 
 /**
- * The video's own captions: straight from YouTube, then from youtube-transcript.ai when YouTube
- * refuses this server (it refuses Vercel). Null when neither has them.
+ * The video's own captions: straight from YouTube, then (when YouTube refuses this server, as it
+ * does Vercel) from TranscriptAPI, then from youtube-transcript.ai. Null when none has them.
  */
 async function videoTranscriptLines(video: VideoRecord, language: OutputLanguage): Promise<TranscriptLine[] | null> {
   const direct = await fetchCaptionLines(video.youtubeVideoId, language);
   if (direct) return direct;
-  const apiKey = serverEnv().YOUTUBE_TRANSCRIPT_AI_KEY;
-  if (!apiKey) return null;
-  const markdown = await fetchTranscriptAi(video.youtubeVideoId, apiKey);
-  const lines = markdown ? parseTranscriptAi(markdown, video.durationSeconds) : [];
-  return lines.length > 0 ? lines : null;
+  const env = serverEnv();
+  if (env.TRANSCRIPT_API_KEY) {
+    const lines = await fetchTranscriptApiLines(video.youtubeVideoId, env.TRANSCRIPT_API_KEY, language);
+    if (lines) return lines;
+  }
+  if (env.YOUTUBE_TRANSCRIPT_AI_KEY) {
+    const markdown = await fetchTranscriptAi(video.youtubeVideoId, env.YOUTUBE_TRANSCRIPT_AI_KEY);
+    const lines = markdown ? parseTranscriptAi(markdown, video.durationSeconds) : [];
+    if (lines.length > 0) return lines;
+  }
+  return null;
 }
 
 /** A transcript job from timestamped lines, or null if there's too little to build from. */
