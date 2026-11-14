@@ -112,6 +112,21 @@ export function PreferencesForm({ initial }: { initial: Preferences }) {
               onChange={(checked) => set("pauseForCheckpoints", checked)}
             />
           </SettingsRow>
+
+          <SettingsRow
+            label="Ask why I paused"
+            htmlFor={`${id}-ask-paused`}
+            description="When you pause a lecture, Sapience asks whether you have a doubt, got distracted, are taking notes or need a break, and helps with that."
+            descriptionId={`${id}-ask-paused-hint`}
+            className="grid-cols-[minmax(0,1fr)_auto] items-center gap-6 md:grid-cols-[minmax(0,1fr)_auto]"
+          >
+            <Switch
+              id={`${id}-ask-paused`}
+              describedBy={`${id}-ask-paused-hint`}
+              checked={values.askWhyPaused}
+              onChange={(checked) => set("askWhyPaused", checked)}
+            />
+          </SettingsRow>
         </SettingsRows>
 
         <SettingsFooter>

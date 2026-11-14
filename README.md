@@ -14,6 +14,7 @@ The source of truth is [`SAPIENCE_IMPLEMENTATION_PLAN.md`](./SAPIENCE_IMPLEMENTA
 | 3: Checkpoints and tutor | **Code complete.** Grading, the tutor (streaming, fallback, persistence) and "Check my understanding" are verified against live Gemini on the local stack. The clip path ("What's on the board?") needs a real video. |
 | 4: Revision, search, recap | **Code complete.** Concepts, FSRS revision, AI search, recap and the due badge in the nav are verified on the local stack. |
 | 5: Dashboard, settings, library, polish | **Code complete.** Settings, Library, featured lessons, Turnstile, the Section 10 states, the E2E test and the pipeline integration test pass locally. Still needs: a deployed preview, real featured lessons, and the production checks below. |
+| 7: Study features | **Code complete.** Flashcards, adaptive quiz, weak spots with timestamps, saved moments, the pause check-in, study rooms (codes, QR, goals, classmates' progress) and the study calendar with Google Calendar sync. Typecheck, lint, unit, RLS and E2E tests pass on the local stack. Needs `supabase db push` and a check with a real video (see Phase 7 notes). |
 | 6 (P1) | **Code complete for the hackathon.** Exam sheet, bring your own key (checked live with Gemini), add all key terms, admin usage page, personal notes and bookmarks, library filters and dashboard stats, and share link are verified locally. Whole-lecture questions (Gemini agentic video mode) are deferred. |
 
 ## Stack
@@ -164,6 +165,72 @@ Design rules follow Anthropic's frontend-design skill, Emil Kowalski's [design-e
 - **Admin usage** at `/app/admin/usage` for emails in `ADMIN_EMAILS` (others get the 404 page): calls, success rate, tokens and model time by kind, model and lesson, from `ai_calls`.
 - **Notes and bookmarks**: the lesson's "Mine" tab. They're private (RLS) and appear on the exam sheet.
 - **Share** copies `/app/lesson/<id>?lang=…`. A signed-out recipient goes to sign-in, and "Try a lesson without an account" now returns them to that lesson.
+
+## Phase 7 notes: study features
+
+New migration `20261115000001_study_features.sql`. Push it with `pnpm exec supabase db push`. It adds `weak_spots`, `quiz_sessions` and `lesson_flashcards` (both server-only), `study_rooms`, `room_members`, `room_goals`, `room_goal_checks`, `study_events`, `calendar_feeds`, and `lesson_progress.furthest_seconds`. It also adds the room functions (`create_room`, `join_room`, `rotate_room_code`, `room_progress`, `room_activity`, `video_peers`) and the `quiz` and `flashcards` AI call kinds.
+
+### Where things live (so the lesson screen stays calm)
+
+- **Sidebar:** Study (Home, Library, Revision, Calendar) and Together (Study rooms).
+- **Lesson study panel:** four tabs, each with at most two views:
+  - Notes: chapter notes · find in lecture
+  - Tutor
+  - Practice: Check yourself (quiz) · Flashcards
+  - Mine: weak spots · notes & moments
+- **Under the player:** one slim row with Save moment (or press B), Mark as confusing, and classmates on this lecture. While you revise weak spots it shows that playlist. During a break it shows the countdown. The pause check-in appears just below it.
+- **Timeline:** weak spots are tinted red on the chapter track, and saved moments are small dots under it.
+
+### Features
+
+- **Flashcards** (Practice → Flashcards), for one chapter or the whole lecture. Each chapter's deck is generated once (lite model, up to 3 chapters per call) and shared by everyone, like the lesson. Making missing decks counts as one AI request.
+  - If the AI is busy, a basic deck is built from key terms and formulas. It isn't saved, so the next try gets a full deck.
+  - Studying: Space flips, ← is "still learning", → is "know it". The still-learning cards come back for a second round, and any of them can be saved for spaced revision.
+- **Check yourself** (adaptive quiz), rules in `src/lib/quiz/engine.ts`. Topics are chapters. A topic starts at level 2 of 4 (Recall, Understand, Apply, Challenge).
+  - Right answer: the next question is one level harder. Right at level 4: the topic is solid.
+  - Wrong answer: an easier question on the same idea, written to address the mistake.
+  - A topic ends after three misses ("rewatch"), and never straight after a single miss.
+  - A whole-lecture quiz takes up to 6 chapters, weak ones first.
+  - The state is server-side (`quiz_sessions`), so the browser can't choose its level. Questions are `questions` rows with source `quiz`, graded by the same `gradeAttempt`.
+  - Each question is grounded in a lecture-index segment (only IDs from the index are accepted), so a wrong answer becomes a weak spot with an exact time range.
+  - The next question is written while you read the explanation. Each question counts as one AI request.
+- **Weak spots** (Mine → Weak spots) come from four signals: wrong checkpoints, wrong quiz answers, doubts raised at a pause, and "Mark as confusing".
+  - They're grouped by chapter, ranked (marked 3, checkpoint or quiz 2, doubt 1), and their ranges merged. Each topic lists its timestamps.
+  - "Revise all" or "Rewatch" plays only those ranges back to back. "Quiz me on this" starts a chapter quiz. "Got it now" resolves the topic, and a solid quiz topic resolves that chapter's quiz and checkpoint spots.
+- **Saved moments** are the existing bookmarks (`notes.kind = 'bookmark'`), now with an optional label and saved from under the player.
+- **Pause check-in.** About a second after you pause (not when a checkpoint pauses the video, and not in the last 5 seconds), Sapience asks why:
+  - **Doubt:** the tutor answers your question, or explains the last minute, and that part becomes a weak spot.
+  - **Distracted:** rewind 30 s. From the third time in a sitting it suggests a 5-minute break with a timer.
+  - **Taking notes:** opens the note box at that time.
+  - **Need a break:** saves your spot, offers the timer, and can add "Finish this lecture" to your calendar (in an hour, tonight or tomorrow) with an "Add to Google Calendar" link.
+  - Turn it off for one lecture from the card, or everywhere in Settings ("Ask why I paused").
+- **Study rooms** (`/app/rooms`). Create a room and share its 6-character code (no look-alike characters), the invite link, or a QR code. Join by typing the code, opening the link, or scanning with your phone's camera app or the in-app scanner (`jsqr`; `Permissions-Policy` now allows `camera=(self)`).
+  - Goals: watch a lecture or anything custom, with an optional due date. Lecture goals show each member's progress from the furthest point they actually played (seeking ahead doesn't count) and are done at 90% or when ticked.
+  - The room page also shows who's studying now (active in the last 2 minutes) and an activity feed.
+  - In a lesson, classmates on the same lecture appear under the player: how far each got and chapters finished.
+  - Owners can issue a new code, remove members and delete the room. Up to 50 members per room and 20 rooms per owner.
+  - Rooms read only what `room_progress` and `video_peers` expose: positions on goal lectures and on the lecture you're watching. Nobody sees another student's answers, notes or weak spots.
+- **Calendar** (`/app/calendar`): plan study sessions linked to a lecture and timestamp. The month view also shows room goal due dates and how many revision concepts are due each day.
+  - **Google Calendar sync** works through a private iCalendar subscription URL (`/api/calendar/feed/<token>.ics`; in Google Calendar: Settings → Add calendar → From URL). Each session also has a one-click "Add to Google Calendar" link.
+  - Why not Google sign-in: the Calendar API needs the sensitive `calendar.events` scope, Google's app verification and stored refresh tokens. The feed needs none of that.
+  - Google re-reads subscribed calendars every few hours, so changes aren't instant.
+  - The feed URL must be public: set `NEXT_PUBLIC_APP_URL` to the deployed domain (the dialog warns when it's localhost).
+  - "Reset link" replaces the token.
+
+### Local stack note
+
+The local database's migration history doesn't list `20261114000001_byok.sql` even though its changes are applied, so `supabase migration up` stops on it. The study-features migration was applied locally with `psql`. `pnpm db:reset` rebuilds the local database cleanly but wipes local data. `tests/rls/study.test.ts` and `tests/rls/rooms.test.ts` cover the new tables.
+
+### Still to check by hand, with a real video
+
+- [ ] Pause the video yourself → the check-in appears; a checkpoint pause doesn't trigger it
+- [ ] Doubt → the tutor answers and a red range appears on the timeline
+- [ ] Quiz: right answers climb levels, and a wrong one brings an easier follow-up
+- [ ] Flashcards for the whole lecture
+- [ ] Revise all plays only the weak ranges
+- [ ] Two accounts in a room see each other under the player
+- [ ] Scan the room QR code with a phone
+- [ ] Subscribe to the feed in Google Calendar from the deployed domain
 
 ## Measured numbers
 

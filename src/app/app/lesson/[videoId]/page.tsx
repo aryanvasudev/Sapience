@@ -9,6 +9,7 @@ import { requireUser } from "@/lib/auth";
 import { getLessonStatus } from "@/lib/lessons/service";
 import { createClient } from "@/lib/supabase/server";
 import { listNotes } from "@/lib/notes/service";
+import { listWeakSpots } from "@/lib/weak-spots/service";
 import { loadLatestConversation } from "@/lib/tutor/service";
 import { parseStartTime } from "@/lib/youtube/parse-url";
 import { getCachedVideo } from "@/lib/youtube/videos";
@@ -53,10 +54,11 @@ async function LessonLoader({
   const tParam = typeof query.t === "string" ? parseStartTime(query.t) : null;
   const startSeconds = tParam ?? progress?.last_position_seconds ?? 0;
 
-  const [status, conversation, notes] = await Promise.all([
+  const [status, conversation, notes, weakSpots] = await Promise.all([
     getLessonStatus({ user, videoId, language }),
     loadLatestConversation(videoId),
     listNotes(videoId),
+    listWeakSpots(videoId),
   ]);
   if (!status) {
     const video = await getCachedVideo(videoId);
@@ -70,9 +72,11 @@ async function LessonLoader({
       language={language}
       startSeconds={startSeconds}
       pauseForCheckpoints={preferences.pauseForCheckpoints}
+      askWhyPaused={preferences.askWhyPaused}
       defaultStyle={preferences.defaultStyle}
       initialMessages={conversation?.messages ?? []}
       initialNotes={notes}
+      initialWeakSpots={weakSpots}
     />
   );
 }

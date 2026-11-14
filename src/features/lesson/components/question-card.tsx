@@ -7,7 +7,7 @@ import { CheckCircleIcon, CancelIcon, ProgressActivityIcon } from "@/components/
 import { MorphText } from "@/components/motion/morph-text";
 import { Markdown } from "@/components/shared/markdown";
 import { Button } from "@/components/ui/button";
-import { requestJson } from "@/lib/client-api";
+import { requestJson, type ClientResult } from "@/lib/client-api";
 import { cn } from "@/lib/utils";
 import { AttemptResultSchema, type AttemptResult, type QuestionPublic } from "@/types/contracts";
 
@@ -27,6 +27,7 @@ export function QuestionCard({
   onSeek,
   onResult,
   actions,
+  grade,
   className,
 }: {
   question: QuestionPublic;
@@ -35,6 +36,8 @@ export function QuestionCard({
   onResult?: (result: AttemptResult, selectedIndex: number) => void;
   /** Shown after grading, e.g. Rewatch / Explain differently / Save / Continue. */
   actions?: (result: AttemptResult, selectedIndex: number) => ReactNode;
+  /** Grade somewhere else (the adaptive quiz); defaults to the question's attempt endpoint. */
+  grade?: (selectedIndex: number) => Promise<ClientResult<AttemptResult>>;
   className?: string;
 }) {
   const name = useId();
@@ -49,9 +52,9 @@ export function QuestionCard({
     if (selected === null || submitting) return;
     setSubmitting(true);
     setError(null);
-    const response = await requestJson(`/api/questions/${question.id}/attempt`, AttemptResultSchema, {
-      body: { selectedIndex: selected },
-    });
+    const response = grade
+      ? await grade(selected)
+      : await requestJson(`/api/questions/${question.id}/attempt`, AttemptResultSchema, { body: { selectedIndex: selected } });
     setSubmitting(false);
     if (!response.ok) {
       setError(response.message);

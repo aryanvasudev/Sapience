@@ -46,7 +46,8 @@ const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
+    // Camera only for this origin: scanning a study room's QR code.
+    value: "camera=(self), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
   },
 ];
 

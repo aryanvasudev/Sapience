@@ -9,6 +9,9 @@ import type { YouTubePlayerApi } from "./use-youtube-player";
 
 const TICK_MS = 500;
 const SAVE_EVERY_MS = 15_000;
+const WATCH_SAMPLE_MS = 1_000;
+/** A jump bigger than this between one-second samples is a seek, not playback. */
+const MAX_PLAYED_STEP_SECONDS = 2.5;
 
 /** Current playback time, sampled every 500 ms while playing (also drives checkpoints). */
 export function usePlaybackClock(player: YouTubePlayerApi): number {
@@ -27,10 +30,32 @@ export function usePlaybackClock(player: YouTubePlayerApi): number {
   return time;
 }
 
-/** Save the position every 15 s while playing, on pause, and when the tab is hidden. */
+/**
+ * Save the position every 15 s while playing, on pause, and when the tab is hidden. Also tracks the
+ * furthest point actually played (classmates in a study room see it), sampling once a second and
+ * ignoring jumps, so seeking ahead doesn't count as watching.
+ */
 export function useProgressSaving(player: YouTubePlayerApi, videoId: string, language: OutputLanguage) {
   const lastSaved = useRef<number | null>(null);
+  const furthest = useRef(0);
+  const lastSample = useRef<number | null>(null);
   const { state, ready, getCurrentTime } = player;
+
+  useEffect(() => {
+    if (!ready || state !== "playing") {
+      lastSample.current = null;
+      return;
+    }
+    const sample = () => {
+      const now = getCurrentTime();
+      const prev = lastSample.current;
+      if (prev !== null && now >= prev && now - prev <= MAX_PLAYED_STEP_SECONDS) furthest.current = Math.max(furthest.current, now);
+      lastSample.current = now;
+    };
+    sample();
+    const timer = window.setInterval(sample, WATCH_SAMPLE_MS);
+    return () => window.clearInterval(timer);
+  }, [state, ready, getCurrentTime]);
 
   useEffect(() => {
     void markLessonOpened({ videoId, language });
@@ -42,7 +67,7 @@ export function useProgressSaving(player: YouTubePlayerApi, videoId: string, lan
       const seconds = Math.floor(getCurrentTime());
       if (seconds <= 0 || seconds === lastSaved.current) return;
       lastSaved.current = seconds;
-      void saveProgress({ videoId, language, seconds });
+      void saveProgress({ videoId, language, seconds, ...(furthest.current > 0 ? { furthest: Math.floor(furthest.current) } : {}) });
     };
 
     if (state === "paused" || state === "ended") save();
