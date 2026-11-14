@@ -6,6 +6,7 @@ import { ConceptList } from "@/features/library/components/concept-list";
 import { LessonList } from "@/features/library/components/lesson-list";
 import { requireUser } from "@/lib/auth";
 import { listOpenedLessons, listSavedConcepts } from "@/lib/library/service";
+import { privateCacheLife, privateData, privateLoader } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Library" };
 
@@ -23,9 +24,24 @@ export default function LibraryPage() {
 const count = (n: number | undefined) =>
   n ? <span className="font-mono text-[0.8125rem] text-faint tabular-nums">{n}</span> : undefined;
 
-async function LibraryLoader() {
+async function loadLibraryCached() {
+  "use cache: private";
+  privateCacheLife();
+  return privateData(() => loadLibraryFresh());
+}
+
+// Declared after the cached function: the "use cache" compiler turns it into a binding that
+// isn't hoisted, so it has to exist before privateLoader reads it.
+const loadLibrary = privateLoader(loadLibraryCached, loadLibraryFresh);
+
+async function loadLibraryFresh() {
   await requireUser("/app/library");
   const [lessons, concepts] = await Promise.all([listOpenedLessons(), listSavedConcepts()]);
+  return { lessons, concepts };
+}
+
+async function LibraryLoader() {
+  const { lessons, concepts } = await loadLibrary();
 
   return (
     <div className="enter grid gap-12 [--i:1] lg:grid-cols-2 lg:gap-10">

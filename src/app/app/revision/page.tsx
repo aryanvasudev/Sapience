@@ -5,10 +5,11 @@ import { PageHeader } from "@/components/layout/page-header";
 import { RevisionScreen } from "@/features/revision/components/revision-screen";
 import { requireUser } from "@/lib/auth";
 import { listRevisionGrouped } from "@/lib/revision/service";
+import { privateCacheLife, privateData, privateLoader } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Revision" };
 
-export default function RevisionPage({ searchParams }: PageProps<"/app/revision">) {
+export default function RevisionPage() {
   return (
     <div className="grid gap-10">
       <PageHeader
@@ -16,16 +17,32 @@ export default function RevisionPage({ searchParams }: PageProps<"/app/revision"
         description="What you saved comes back just before you'd forget it. Rate each one honestly and the gaps adjust."
       />
       <Suspense fallback={<RevisionSkeleton />}>
-        <RevisionLoader searchParams={searchParams} />
+        <RevisionLoader />
       </Suspense>
     </div>
   );
 }
 
-async function RevisionLoader({ searchParams }: { searchParams: PageProps<"/app/revision">["searchParams"] }) {
+// RevisionScreen reads `?start=1` (Start revision) in the browser, so the page doesn't wait on the
+// URL and its data can be prefetched with the route.
+async function RevisionLoader() {
+  return <RevisionScreen {...await loadRevision()} />;
+}
+
+/** Cached in the browser for the session, so the page opens with its data (see `privateData`). */
+async function loadRevisionCached() {
+  "use cache: private";
+  privateCacheLife();
+  return privateData(() => loadRevisionFresh());
+}
+
+// Declared after the cached function: the "use cache" compiler turns it into a binding that
+// isn't hoisted, so it has to exist before privateLoader reads it.
+const loadRevision = privateLoader(loadRevisionCached, loadRevisionFresh);
+
+async function loadRevisionFresh() {
   await requireUser("/app/revision");
-  const [groups, query] = await Promise.all([listRevisionGrouped(), searchParams]);
-  return <RevisionScreen {...groups} autoStart={query.start === "1"} />;
+  return listRevisionGrouped();
 }
 
 function RevisionSkeleton() {

@@ -8,7 +8,7 @@ import { PreferencesForm } from "@/features/settings/components/preferences-form
 import { byokEnabled, keyStatus } from "@/lib/ai/byok";
 import { chainsForKeyCheck } from "@/lib/ai/provider";
 import { requireUser } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, privateCacheLife, privateData, privateLoader } from "@/lib/supabase/server";
 import { parsePreferences } from "@/types/contracts";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -24,13 +24,29 @@ export default function SettingsPage() {
   );
 }
 
-async function SettingsLoader() {
+/** Cached in the browser for the session, so the page opens with its data (see `privateData`). */
+async function loadSettingsCached() {
+  "use cache: private";
+  privateCacheLife();
+  return privateData(() => loadSettingsFresh());
+}
+
+// Declared after the cached function: the "use cache" compiler turns it into a binding that
+// isn't hoisted, so it has to exist before privateLoader reads it.
+const loadSettings = privateLoader(loadSettingsCached, loadSettingsFresh);
+
+async function loadSettingsFresh() {
   const user = await requireUser("/app/settings");
   const supabase = await createClient();
   const [{ data: profile }, aiKey] = await Promise.all([
     supabase.from("profiles").select("preferences").eq("id", user.id).maybeSingle(),
     keyStatus(user.id),
   ]);
+  return { user, profile, aiKey };
+}
+
+async function SettingsLoader() {
+  const { user, profile, aiKey } = await loadSettings();
 
   return (
     <div className="enter grid max-w-3xl gap-6 [--i:1]">

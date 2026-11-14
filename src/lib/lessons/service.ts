@@ -162,7 +162,7 @@ async function nudge(lessonId: string) {
     .eq("id", lessonId)
     .or(`last_nudged_at.is.null,last_nudged_at.lt.${cutoff}`)
     .select("id");
-  if (data && data.length > 0) after(() => dispatchNext(lessonId));
+  if (data && data.length > 0) await dispatchNext(lessonId);
 }
 
 /**
@@ -175,41 +175,54 @@ export async function getLessonStatus(input: {
   videoId: string;
   language: OutputLanguage;
 }): Promise<LessonStatusResponse | null> {
-  const admin = createAdminClient();
-  const [video, lessonResult] = await Promise.all([
-    getCachedVideo(input.videoId),
-    admin
-      .from("lessons")
-      .select("id, youtube_video_id, output_language, source, status, spoken_language, overview, chapters_total, chapters_ready")
-      .eq("youtube_video_id", input.videoId)
-      .eq("output_language", input.language)
-      .eq("prompt_version", serverEnv().PROMPT_VERSION)
-      .maybeSingle(),
-  ]);
-  const lesson = lessonResult.data;
-  if (!video || !lesson) return null;
+  const [video, bundles] = await Promise.all([getCachedVideo(input.videoId), loadLessonBundles(input.videoId, input.language)]);
+  return lessonStatusFrom(video, bundles.find((b) => b.output_language === input.language) ?? null);
+}
 
-  const [chapters, questions, waiting] = await Promise.all([
-    admin
-      .from("lesson_chapters")
-      .select("id, position, status, title, start_seconds, end_seconds, summary, notes_markdown, key_terms, formulas, key_moments, segments")
-      .eq("lesson_id", lesson.id)
-      .order("position"),
-    // Only answer-free columns are selected. correct_index / explanation / misconception stay here.
-    admin
-      .from("questions")
-      .select("id, chapter_id, concept, prompt, options, at_seconds")
-      .eq("lesson_id", lesson.id)
-      .eq("source", "checkpoint"),
-    admin
-      .from("lesson_jobs")
-      .select("id", { count: "exact", head: true })
-      .eq("lesson_id", lesson.id)
-      .eq("status", "queued")
-      .eq("error_code", "quota"),
-  ]);
+/**
+ * The lesson row with its chapters, answer-free checkpoints (correct_index / explanation /
+ * misconception stay on the server) and a count of jobs parked on quota, embedded so the whole
+ * lesson arrives in one round trip. The `!…_fkey` hints pin each embed to its direct foreign key:
+ * `questions` also links lessons to chapters, which PostgREST would otherwise call ambiguous.
+ */
+const LESSON_BUNDLE =
+  "id, youtube_video_id, output_language, source, status, spoken_language, overview, chapters_total, chapters_ready, lesson_chapters!lesson_chapters_lesson_id_fkey(id, position, status, title, start_seconds, end_seconds, summary, notes_markdown, key_terms, formulas, key_moments, segments), questions!questions_lesson_id_fkey(id, chapter_id, concept, prompt, options, at_seconds), lesson_jobs!lesson_jobs_lesson_id_fkey(count)";
 
-  const questionIds = (questions.data ?? []).map((q) => q.id);
+/**
+ * Current-version lessons for a video, one per output language (only `language` when given),
+ * each with everything `lessonStatusFrom` needs. Without a language, a page can start this before
+ * it knows which language to show and pick the row afterwards.
+ */
+export async function loadLessonBundles(videoId: string, language?: OutputLanguage) {
+  let query = createAdminClient()
+    .from("lessons")
+    .select(LESSON_BUNDLE)
+    .eq("youtube_video_id", videoId)
+    .eq("prompt_version", serverEnv().PROMPT_VERSION)
+    .eq("questions.source", "checkpoint")
+    .eq("lesson_jobs.status", "queued")
+    .eq("lesson_jobs.error_code", "quota");
+  if (language) query = query.eq("output_language", language);
+  const { data } = await query;
+  return data ?? [];
+}
+
+export type LessonBundle = Awaited<ReturnType<typeof loadLessonBundles>>[number];
+
+/**
+ * The public lesson status from a loaded bundle, adding the student's first attempt per checkpoint.
+ * Pass `watchdog: false` where `after()` can't run (a cache scope, a prefetch). The lesson screen
+ * polls GET /api/lessons/[videoId] while a lesson builds, and that route runs the watchdog.
+ */
+export async function lessonStatusFrom(
+  video: VideoRecord | null,
+  bundle: LessonBundle | null,
+  { watchdog = true }: { watchdog?: boolean } = {},
+): Promise<LessonStatusResponse | null> {
+  if (!video || !bundle) return null;
+  const { lesson_chapters: chapters, questions, lesson_jobs: waiting, ...lesson } = bundle;
+
+  const questionIds = questions.map((q) => q.id);
   const attempts: LessonStatusResponse["attempts"] = {};
   if (questionIds.length > 0) {
     const supabase = await createClient();
@@ -223,10 +236,9 @@ export async function getLessonStatus(input: {
     }
   }
 
-  const publicLesson = serializeLesson(lesson, chapters.data ?? [], questions.data ?? []);
-  const inProgress = lesson.status !== "ready" && lesson.status !== "failed";
-  const pendingChapters = publicLesson.chapters.some((c) => c.status === "pending");
-  if ((inProgress || pendingChapters) && lesson.source !== "fixture") await nudge(lesson.id);
+  const publicLesson = serializeLesson(lesson, chapters, questions);
+  // The watchdog never changes this response, so it runs after it is sent.
+  if (watchdog && stillBuilding(publicLesson)) after(() => nudge(lesson.id));
 
   return {
     status: publicLesson.status,
@@ -235,8 +247,13 @@ export async function getLessonStatus(input: {
     lesson: publicLesson,
     attempts,
     capabilities: capabilities(),
-    waitingForCapacity: (waiting.count ?? 0) > 0,
+    waitingForCapacity: (waiting[0]?.count ?? 0) > 0,
   };
+}
+
+function stillBuilding(lesson: NonNullable<LessonStatusResponse["lesson"]>): boolean {
+  const inProgress = lesson.status !== "ready" && lesson.status !== "failed";
+  return (inProgress || lesson.chapters.some((c) => c.status === "pending")) && lesson.source !== "fixture";
 }
 
 /** POST /api/lessons/[videoId]/retry. A chapter retry is free; a whole-lesson retry counts. */

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { AppSidebar, AppSidebarFallback, HeaderTitle } from "@/components/layout/app-sidebar";
+import { ClientCacheFreshness } from "@/components/layout/client-cache-freshness";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { isAdmin } from "@/lib/admin/usage";
 import { requireUser } from "@/lib/auth";
@@ -18,6 +19,7 @@ import { dueCount } from "@/lib/revision/service";
 export default function AppLayout({ children }: LayoutProps<"/app">) {
   return (
     <SidebarProvider className="print:block print:bg-white">
+      <ClientCacheFreshness />
       {/* The sidebar must stay a direct sibling of the inset: the inset's margins key off `peer`. */}
       <Suspense fallback={<AppSidebarFallback />}>
         <SidebarWithSession />

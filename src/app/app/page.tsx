@@ -7,7 +7,7 @@ import { DashboardSections, DashboardSectionsSkeleton } from "@/features/dashboa
 import { PasteBox } from "@/features/dashboard/paste-box";
 import { capabilities } from "@/lib/ai/provider";
 import { requireUser } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, privateCacheLife, privateData, privateLoader } from "@/lib/supabase/server";
 import { parsePreferences } from "@/types/contracts";
 
 export const metadata: Metadata = { title: "Home" };
@@ -32,13 +32,28 @@ export default function DashboardPage() {
 }
 
 async function PasteBoxLoader() {
-  const user = await requireUser();
-  const supabase = await createClient();
-  const { data: profile } = await supabase.from("profiles").select("preferences").eq("id", user.id).maybeSingle();
   return (
     <PasteBox
-      defaultLanguage={parsePreferences(profile?.preferences).language}
+      defaultLanguage={await loadDefaultLanguage()}
       videoLessons={serverEnv().LESSON_BUILD_MODE === "captions" || capabilities().videoLessons}
     />
   );
+}
+
+/** Cached in the browser for the session, so the page opens with its data (see `privateData`). */
+async function loadDefaultLanguageCached() {
+  "use cache: private";
+  privateCacheLife();
+  return privateData(() => loadDefaultLanguageFresh());
+}
+
+// Declared after the cached function: the "use cache" compiler turns it into a binding that
+// isn't hoisted, so it has to exist before privateLoader reads it.
+const loadDefaultLanguage = privateLoader(loadDefaultLanguageCached, loadDefaultLanguageFresh);
+
+async function loadDefaultLanguageFresh() {
+  const user = await requireUser();
+  const supabase = await createClient();
+  const { data: profile } = await supabase.from("profiles").select("preferences").eq("id", user.id).maybeSingle();
+  return parsePreferences(profile?.preferences).language;
 }

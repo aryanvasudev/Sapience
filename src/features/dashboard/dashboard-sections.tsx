@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { OUTPUT_LANGUAGES, type OutputLanguage } from "@/config/enums";
 import { requireUser } from "@/lib/auth";
 import { listFeatured, type FeaturedLesson } from "@/lib/library/service";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, privateCacheLife, privateData, privateLoader } from "@/lib/supabase/server";
 
 export type ContinueItem = {
   videoId: string;
@@ -22,6 +22,21 @@ export type ContinueItem = {
 
 /** Featured lessons, continue learning and due reviews. Real data from the user's own rows (RLS). */
 export async function DashboardSections() {
+  return <DashboardSectionsView {...await loadDashboard()} />;
+}
+
+/** Cached in the browser for the session, so the page opens with its data (see `privateData`). */
+async function loadDashboardCached() {
+  "use cache: private";
+  privateCacheLife();
+  return privateData(loadDashboardRows);
+}
+
+// Declared after the cached function: the "use cache" compiler turns it into a binding that
+// isn't hoisted, so it has to exist before privateLoader reads it.
+const loadDashboard = privateLoader(loadDashboardCached, loadDashboardRows);
+
+async function loadDashboardRows() {
   await requireUser();
   const supabase = await createClient();
   const nowIso = new Date().toISOString();
@@ -59,7 +74,7 @@ export async function DashboardSections() {
   });
   const dueCount = due.count ?? 0;
 
-  return <DashboardSectionsView items={items} featured={featured} dueCount={dueCount} loadFailed={loadFailed} stats={stats} />;
+  return { items, featured, dueCount, loadFailed, stats };
 }
 
 export type StudyStats = { answered: number; firstTryCorrect: number; conceptsSaved: number; reviewsDone: number };
@@ -121,7 +136,8 @@ export function DashboardSectionsView({
             <ul className="mt-3 -mx-2.5 grid gap-0.5">
               {items.map((item) => (
                 <li key={item.videoId}>
-                  <LessonRow item={item} />
+                  {/* At most six: prefetched in full, so the lesson you were in opens instantly. */}
+                  <LessonRow item={item} prefetch />
                 </li>
               ))}
             </ul>

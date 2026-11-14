@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { ArrowForwardIcon, CheckCircleIcon, EventRepeatIcon, PlayCircleIcon, ProgressActivityIcon } from "@/components/icons";
@@ -43,11 +44,12 @@ export function RevisionScreen({
   upcoming: RevisionItemView[];
   later: RevisionItemView[];
   nextDueLabel: string | null;
-  /** Open straight into the review (from the dashboard's Start revision). */
+  /** Open straight into the review. `?start=1` (the dashboard's Start revision) does the same. */
   autoStart?: boolean;
 }) {
+  const startParam = useSearchParams().get("start") === "1";
   const [queue, setQueue] = useState(due);
-  const [reviewing, setReviewing] = useState(autoStart && due.length > 0);
+  const [reviewing, setReviewing] = useState((autoStart || startParam) && due.length > 0);
   const [done, setDone] = useState(0);
   const [tab, setTab] = useState(due.length > 0 ? "due" : "upcoming");
   const reduce = useReducedMotion();

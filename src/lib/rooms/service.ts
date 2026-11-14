@@ -86,25 +86,21 @@ export async function defaultDisplayName(user: CurrentUser): Promise<string> {
 /** Rooms the student belongs to, newest first. */
 export async function listMyRooms(user: CurrentUser): Promise<RoomSummary[] | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("study_rooms")
-    .select("id, name, description, owner_id, created_at, room_members(count), room_goals(id, title, due_at, youtube_video_id, room_goal_checks(user_id))")
-    .order("created_at", { ascending: false })
-    .limit(100);
+  // The student's own progress (with each lecture's length) is read alongside the rooms rather
+  // than after them, to count the lecture goals they've finished without a second round trip.
+  const [{ data, error }, { data: progress }] = await Promise.all([
+    supabase
+      .from("study_rooms")
+      .select("id, name, description, owner_id, created_at, room_members(count), room_goals(id, title, due_at, youtube_video_id, room_goal_checks(user_id))")
+      .order("created_at", { ascending: false })
+      .limit(100),
+    supabase.from("lesson_progress").select("youtube_video_id, furthest_seconds, videos(duration_seconds)").limit(1000),
+  ]);
   if (error) return null;
 
-  // The student's own progress on every lecture goal, to count lectures they've finished.
-  const videoIds = [...new Set(data.flatMap((r) => r.room_goals.map((g) => g.youtube_video_id).filter((v): v is string => v !== null)))];
   const finished = new Set<string>();
-  if (videoIds.length > 0) {
-    const [{ data: progress }, { data: videos }] = await Promise.all([
-      supabase.from("lesson_progress").select("youtube_video_id, furthest_seconds").in("youtube_video_id", videoIds),
-      supabase.from("videos").select("youtube_video_id, duration_seconds").in("youtube_video_id", videoIds),
-    ]);
-    const durations = new Map((videos ?? []).map((v) => [v.youtube_video_id, v.duration_seconds]));
-    for (const p of progress ?? []) {
-      if (lectureDone(p.furthest_seconds, durations.get(p.youtube_video_id))) finished.add(p.youtube_video_id);
-    }
+  for (const p of progress ?? []) {
+    if (lectureDone(p.furthest_seconds, p.videos?.duration_seconds)) finished.add(p.youtube_video_id);
   }
 
   const now = Date.now();
@@ -130,14 +126,10 @@ export async function listMyRooms(user: CurrentUser): Promise<RoomSummary[] | nu
 /** One room with its members, goals and progress, or null if it doesn't exist or isn't yours. */
 export async function getRoom(user: CurrentUser, roomId: string): Promise<RoomDetail | null> {
   const supabase = await createClient();
-  const { data: room } = await supabase
-    .from("study_rooms")
-    .select("id, name, description, code, owner_id, created_at")
-    .eq("id", roomId)
-    .maybeSingle();
-  if (!room) return null;
-
-  const [members, goals, progress, activity] = await Promise.all([
+  // Everything starts at once: the other reads are scoped to members by RLS and the RPCs, so for
+  // a room that doesn't exist or isn't yours they come back empty and the result is discarded.
+  const [{ data: room }, members, goals, progress, activity] = await Promise.all([
+    supabase.from("study_rooms").select("id, name, description, code, owner_id, created_at").eq("id", roomId).maybeSingle(),
     supabase.from("room_members").select("user_id, display_name, role, joined_at").eq("room_id", roomId).order("joined_at"),
     supabase
       .from("room_goals")
@@ -148,6 +140,7 @@ export async function getRoom(user: CurrentUser, roomId: string): Promise<RoomDe
     supabase.rpc("room_progress", { p_room_id: roomId }),
     supabase.rpc("room_activity", { p_room_id: roomId }),
   ]);
+  if (!room) return null;
 
   const goalRows = goals.data ?? [];
   const videoIds = [...new Set(goalRows.map((g) => g.youtube_video_id).filter((v): v is string => v !== null))];

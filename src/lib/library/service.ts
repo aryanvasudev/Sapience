@@ -5,6 +5,9 @@ import "server-only";
  * user-scoped client (RLS); lessons are a shared, server-only table, so their status is read with
  * the secret key and only `ready` ones are returned.
  */
+import { cacheLife, cacheTag } from "next/cache";
+import { cache } from "react";
+
 import { FEATURED_LESSONS } from "@/config/featured";
 import { OUTPUT_LANGUAGES, type OutputLanguage } from "@/config/enums";
 import { serverEnv } from "@/env";
@@ -36,6 +39,21 @@ const toLanguage = (value: string): OutputLanguage =>
  * labelled as test data and never presented as AI output.
  */
 export async function listFeatured(): Promise<FeaturedLesson[]> {
+  try {
+    return await loadFeatured();
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * The same for every student, so it is cached across requests instead of costing two queries on
+ * every visit to Home. A failed read throws, and a thrown error is never cached.
+ */
+async function loadFeatured(): Promise<FeaturedLesson[]> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("featured-lessons");
   const admin = createAdminClient();
   const version = serverEnv().PROMPT_VERSION;
   const ids = FEATURED_LESSONS.map((f) => f.videoId);
@@ -57,7 +75,7 @@ export async function listFeatured(): Promise<FeaturedLesson[]> {
       .eq("status", "ready")
       .limit(3),
   ]);
-  if (featured.error || fixtures.error) return [];
+  if (featured.error || fixtures.error) throw new Error("featured lessons unavailable");
 
   const rows = [
     ...FEATURED_LESSONS.flatMap((f) =>
@@ -82,8 +100,8 @@ export async function listFeatured(): Promise<FeaturedLesson[]> {
   );
 }
 
-/** Every lecture the student has opened, most recent first. */
-export async function listOpenedLessons(): Promise<OpenedLesson[] | null> {
+/** Every lecture the student has opened, most recent first. Shared by every caller in a request. */
+export const listOpenedLessons = cache(async (): Promise<OpenedLesson[] | null> => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("lesson_progress")
@@ -109,22 +127,23 @@ export async function listOpenedLessons(): Promise<OpenedLesson[] | null> {
         ]
       : [],
   );
-}
+});
 
 /** Saved concepts with their next review and the lecture they came from. */
 export async function listSavedConcepts(): Promise<SavedConcept[] | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("concepts")
-    .select("*, revision_items(due_at)")
-    .order("created_at", { ascending: false })
-    .limit(500);
+  // Concepts come from lectures the student opened, so those titles usually cover every concept
+  // and the lookup below only runs for the rest, instead of always waiting on a second query.
+  const [{ data, error }, opened] = await Promise.all([
+    supabase.from("concepts").select("*, revision_items(due_at)").order("created_at", { ascending: false }).limit(500),
+    listOpenedLessons(),
+  ]);
   if (error) return null;
 
-  const videoIds = [...new Set(data.flatMap((row) => (row.youtube_video_id ? [row.youtube_video_id] : [])))];
-  const titles = new Map<string, string>();
-  if (videoIds.length) {
-    const { data: videos } = await supabase.from("videos").select("youtube_video_id, title").in("youtube_video_id", videoIds);
+  const titles = new Map((opened ?? []).map((lesson) => [lesson.videoId, lesson.title]));
+  const missing = [...new Set(data.flatMap((row) => (row.youtube_video_id && !titles.has(row.youtube_video_id) ? [row.youtube_video_id] : [])))];
+  if (missing.length) {
+    const { data: videos } = await supabase.from("videos").select("youtube_video_id, title").in("youtube_video_id", missing);
     for (const v of videos ?? []) titles.set(v.youtube_video_id, v.title);
   }
 

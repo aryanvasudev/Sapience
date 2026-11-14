@@ -6,6 +6,7 @@ import { CalendarBodySkeleton, CalendarScreen } from "@/features/calendar/compon
 import { requireUser } from "@/lib/auth";
 import { loadCalendarData } from "@/lib/calendar/service";
 import { listOpenedLessons } from "@/lib/library/service";
+import { privateCacheLife, privateData, privateLoader } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Calendar" };
 
@@ -24,9 +25,25 @@ export default function CalendarPage() {
   );
 }
 
-async function CalendarLoader() {
+/** Cached in the browser for the session, so the page opens with its data (see `privateData`). */
+async function loadCalendarCached() {
+  "use cache: private";
+  privateCacheLife();
+  return privateData(() => loadCalendarFresh());
+}
+
+// Declared after the cached function: the "use cache" compiler turns it into a binding that
+// isn't hoisted, so it has to exist before privateLoader reads it.
+const loadCalendar = privateLoader(loadCalendarCached, loadCalendarFresh);
+
+async function loadCalendarFresh() {
   const user = await requireUser("/app/calendar");
-  const [{ events, deadlines, revisionDue }, lessons] = await Promise.all([loadCalendarData(), listOpenedLessons()]);
+  const [data, lessons] = await Promise.all([loadCalendarData(), listOpenedLessons()]);
+  return { ...data, lessons, isAnonymous: user.isAnonymous };
+}
+
+async function CalendarLoader() {
+  const { events, deadlines, revisionDue, lessons, isAnonymous } = await loadCalendar();
 
   return (
     <CalendarScreen
@@ -34,7 +51,7 @@ async function CalendarLoader() {
       deadlines={deadlines}
       revisionDue={revisionDue}
       lectures={(lessons ?? []).map((l) => ({ videoId: l.videoId, title: l.title, positionSeconds: l.positionSeconds }))}
-      isAnonymous={user.isAnonymous}
+      isAnonymous={isAnonymous}
     />
   );
 }

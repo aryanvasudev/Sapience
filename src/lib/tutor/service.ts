@@ -370,21 +370,18 @@ export async function streamTutorAnswer(user: CurrentUser, request: TutorRequest
 /** The latest conversation for this video (one active conversation per user and video). */
 export async function loadLatestConversation(videoId: string): Promise<{ id: string; messages: TutorUIMessage[] } | null> {
   const supabase = await createClient();
+  // The messages are embedded so the conversation and its history arrive in one round trip.
   const { data: conversation } = await supabase
     .from("conversations")
-    .select("id")
+    .select("id, messages!messages_conversation_id_fkey(id, role, parts, metadata)")
     .eq("youtube_video_id", videoId)
     .order("updated_at", { ascending: false })
     .limit(1)
+    .order("created_at", { ascending: true, referencedTable: "messages" })
+    .limit(100, { referencedTable: "messages" })
     .maybeSingle();
   if (!conversation) return null;
-  const { data: rows } = await supabase
-    .from("messages")
-    .select("id, role, parts, metadata")
-    .eq("conversation_id", conversation.id)
-    .order("created_at", { ascending: true })
-    .limit(100);
-  const messages: TutorUIMessage[] = (rows ?? []).map((m) => {
+  const messages: TutorUIMessage[] = conversation.messages.map((m) => {
     const meta = m.metadata && typeof m.metadata === "object" && !Array.isArray(m.metadata) ? m.metadata : {};
     return {
       id: m.id,

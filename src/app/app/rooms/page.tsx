@@ -8,6 +8,7 @@ import { CreateRoomDialog } from "@/features/rooms/components/create-room-dialog
 import { JoinByCode } from "@/features/rooms/components/join-by-code";
 import { requireUser } from "@/lib/auth";
 import { defaultDisplayName, listMyRooms, type RoomSummary } from "@/lib/rooms/service";
+import { privateCacheLife, privateData, privateLoader } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Study rooms" };
 
@@ -21,9 +22,25 @@ export default function RoomsPage() {
   );
 }
 
-async function RoomsLoader() {
+/** Cached in the browser for the session, so the page opens with its data (see `privateData`). */
+async function loadRoomsCached() {
+  "use cache: private";
+  privateCacheLife();
+  return privateData(() => loadRoomsFresh());
+}
+
+// Declared after the cached function: the "use cache" compiler turns it into a binding that
+// isn't hoisted, so it has to exist before privateLoader reads it.
+const loadRooms = privateLoader(loadRoomsCached, loadRoomsFresh);
+
+async function loadRoomsFresh() {
   const user = await requireUser("/app/rooms");
   const [rooms, displayName] = await Promise.all([listMyRooms(user), defaultDisplayName(user)]);
+  return { rooms, displayName };
+}
+
+async function RoomsLoader() {
+  const { rooms, displayName } = await loadRooms();
 
   return (
     <>

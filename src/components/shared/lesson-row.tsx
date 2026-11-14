@@ -41,13 +41,17 @@ function Thumb({ item, sizes, className }: { item: LessonRowData; sizes: string;
   );
 }
 
-/** One lecture in a list: thumbnail, title, channel and length, with watch progress when known. */
-export function LessonRow({ item }: { item: LessonRowData }) {
+/**
+ * One lecture in a list: thumbnail, title, channel and length, with watch progress when known.
+ * `prefetch` loads the whole lesson before the click; keep it to short lists (each costs a request).
+ */
+export function LessonRow({ item, prefetch }: { item: LessonRowData; prefetch?: boolean }) {
   const pct =
     item.positionSeconds === undefined ? null : Math.min(100, Math.round((item.positionSeconds / item.durationSeconds) * 100));
   return (
     <Link
       href={href(item)}
+      prefetch={prefetch ? true : "auto"}
       className="group/row flex items-center gap-4 rounded-xl p-2.5 transition-colors duration-150 ease-(--ease-out) focus-visible:-outline-offset-2 [@media(hover:hover)]:hover:bg-raised/70"
     >
       <Thumb item={item} sizes="144px" className="w-28 rounded-lg sm:w-36" />

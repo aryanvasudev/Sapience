@@ -332,6 +332,13 @@
     animation-delay: calc(var(--i, 0) * 60ms);
   }
 
+  /* Inside the signed-in app the entrance plays after each page's data arrives, so its length
+     adds directly to how long navigation feels. Keep it short there; marketing keeps the slow one. */
+  #main .enter {
+    animation-duration: 240ms;
+    animation-delay: calc(var(--i, 0) * 30ms);
+  }
+
   /* Fine hairline grid for marketing backdrops. */
   .bg-hairline-grid {
     background-image:
