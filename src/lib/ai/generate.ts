@@ -136,8 +136,14 @@ export async function generateValidated<S extends z.ZodType, T>(
  */
 const VIDEO_HANDOVER_TIMEOUT_MS = 120_000;
 
-/** A timeout or a server-side error is the model's problem, not the video's: try the next one. */
-function handsOverToNextVideoModel(error: unknown): boolean {
+/**
+ * A text model that isn't the last in its chain gets this long before the next one takes over.
+ * Short enough that a first call plus a repair call still fit the job's 300 s budget.
+ */
+const TEXT_HANDOVER_TIMEOUT_MS = 60_000;
+
+/** A timeout or a server-side error is the model's problem, not the input's: try the next one. */
+function handsOverToNextModel(error: unknown): boolean {
   if (jobErrorCode(error) === "model_timeout") return true;
   const root = rootError(error);
   return APICallError.isInstance(root) && root.statusCode !== undefined && root.statusCode >= 500;
@@ -166,22 +172,31 @@ export async function generateValidatedOnVideoChain<S extends z.ZodType, T>(
         },
         validate,
       ),
-    { fallBackOn: handsOverToNextVideoModel },
+    { fallBackOn: handsOverToNextModel },
   );
   return { ...result.value, spec: result.model };
 }
 
-/** Text-tier structured call down the fallback chain (main → lite → OpenRouter). */
+/**
+ * Text-tier structured call down the fallback chain (main → lite → OpenRouter). A model that is
+ * out of quota, overloaded, failing server-side or silent past its deadline hands over to the next
+ * one; every model but the last gets at most `TEXT_HANDOVER_TIMEOUT_MS`.
+ */
 export async function generateStructuredWithFallback<S extends z.ZodType>(
   chain: ModelSpec[],
   args: Omit<StructuredArgs<S>, "spec">,
 ): Promise<{ output: z.infer<S>; usage: Usage; spec: ModelSpec; fallbackFrom: ModelSpec | null }> {
-  const result = await withFallback(chain, (spec) =>
-    generateStructured({
-      ...args,
-      spec,
-      record: { ...args.record, fallbackFrom: spec === chain[0] ? null : chain[0] },
-    }),
+  const last = chain[chain.length - 1];
+  const result = await withFallback(
+    chain,
+    (spec) =>
+      generateStructured({
+        ...args,
+        spec,
+        ...(spec !== last ? { timeoutMs: Math.min(args.timeoutMs ?? TEXT_HANDOVER_TIMEOUT_MS, TEXT_HANDOVER_TIMEOUT_MS) } : {}),
+        record: { ...args.record, fallbackFrom: spec === chain[0] ? null : chain[0] },
+      }),
+    { fallBackOn: handsOverToNextModel },
   );
   return { ...result.value, spec: result.model, fallbackFrom: result.fallbackFrom };
 }
