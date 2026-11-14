@@ -92,7 +92,7 @@ function SidebarView({ pathname, dueCount, user }: { pathname: string | null; du
                   }}
                 >
                   <AddIcon className="size-4.5!" />
-                  <span>New lesson</span>
+                  <span className="group-data-[collapsible=icon]:hidden">New lesson</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -113,7 +113,7 @@ function SidebarView({ pathname, dueCount, user }: { pathname: string | null; du
                       asChild
                       isActive={active}
                       tooltip={item.label}
-                      className="relative isolate h-9 gap-2.5 px-2.5 text-muted-foreground transition-colors duration-150 ease-(--ease-out) hover:bg-transparent hover:text-foreground data-[active=true]:bg-transparent data-[active=true]:text-foreground [@media(hover:hover)]:hover:bg-sidebar-accent/60"
+                      className="relative isolate h-9 gap-2.5 px-2.5 group-data-[collapsible=icon]:justify-center text-muted-foreground transition-colors duration-150 ease-(--ease-out) hover:bg-transparent hover:text-foreground data-[active=true]:bg-transparent data-[active=true]:text-foreground [@media(hover:hover)]:hover:bg-sidebar-accent/60"
                     >
                       <Link href={item.href} aria-current={active ? "page" : undefined} onClick={() => setOpenMobile(false)}>
                         {active ? (
@@ -125,7 +125,7 @@ function SidebarView({ pathname, dueCount, user }: { pathname: string | null; du
                           />
                         ) : null}
                         <Icon className="size-4.5!" />
-                        <span>{item.label}</span>
+                        <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
                         {showDue ? (
                           <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1.5 font-mono text-[0.6875rem] font-medium text-brand-foreground tabular-nums group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:top-0.5 group-data-[collapsible=icon]:right-0.5 group-data-[collapsible=icon]:h-2 group-data-[collapsible=icon]:min-w-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:text-[0px]">
                             {dueCount > 99 ? "99+" : dueCount}
