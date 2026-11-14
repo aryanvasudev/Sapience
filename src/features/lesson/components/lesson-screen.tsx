@@ -37,6 +37,7 @@ import { ChapterList, ChapterTimeline } from "./chapter-list";
 import { CheckpointCard } from "./checkpoint-card";
 import { LessonJourney } from "./journey";
 import { NotesPanel } from "./notes-panel";
+import { PanelResizer, useStudyPanelWidth } from "./panel-resizer";
 import { BREAK_MINUTES, PauseCheckIn } from "./pause-check-in";
 import { PlayerBar } from "./player-bar";
 import { RecapPanel } from "./recap-panel";
@@ -103,6 +104,8 @@ export function LessonScreen({
   initialWeakSpots: WeakSpot[];
 }) {
   const router = useRouter();
+  const layoutRef = useRef<HTMLDivElement>(null);
+  const panelWidth = useStudyPanelWidth(layoutRef);
   const { data, stalled, refresh } = useLessonStatus(initial, videoId, language);
   const player = useYouTubePlayer(videoId, startSeconds);
   const { mount: mountPlayer, error: playerError, getCurrentTime, ready: playerReady, play, pause } = player;
@@ -473,7 +476,11 @@ export function LessonScreen({
   const savedCount = notes.length;
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_25rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_28rem]">
+    <div
+      ref={layoutRef}
+      style={panelWidth.width ? ({ "--panel-w": `${panelWidth.width}px` } as React.CSSProperties) : undefined}
+      className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_var(--panel-w,25rem)] lg:items-start xl:grid-cols-[minmax(0,1fr)_var(--panel-w,28rem)]"
+    >
       <div className="grid min-w-0 gap-6">
         {/* The player. Nothing is ever drawn over it (Section 5.2). */}
         <div className="sticky top-14 z-20 -mx-4 bg-background md:mx-0 md:-mt-4 md:pt-4">
@@ -621,10 +628,9 @@ export function LessonScreen({
         ) : null}
       </div>
 
-      <aside
-        aria-label="Study panel"
-        className="enter min-w-0 [--i:1] lg:sticky lg:top-[4.5rem] lg:-mx-3 lg:max-h-[calc(100svh-6.5rem)] lg:overflow-x-hidden lg:overflow-y-auto lg:overscroll-contain lg:px-3 lg:pb-1"
-      >
+      <aside aria-label="Study panel" className="enter relative min-w-0 [--i:1] lg:sticky lg:top-[4.5rem]">
+        <PanelResizer layout={layoutRef} panel={panelWidth} />
+        <div className="lg:-mx-3 lg:max-h-[calc(100svh-6.5rem)] lg:overflow-x-hidden lg:overflow-y-auto lg:overscroll-contain lg:px-3 lg:pb-1">
         {chapterList ? (
           <section aria-label="Chapters" className="mb-8 lg:hidden">
             {chaptersHeading}
@@ -793,6 +799,7 @@ export function LessonScreen({
             </Tabs>
           </TabsContent>
         </Tabs>
+        </div>
       </aside>
     </div>
   );
