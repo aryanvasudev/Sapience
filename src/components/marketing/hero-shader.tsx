@@ -9,8 +9,9 @@ import { cn } from "@/lib/utils";
 /*
  * The landing page's two shaders, both from React Bits (https://reactbits.dev).
  *
- * - HeroWaves ("Gradient Waves"): dark graphite swells rolling in under the headline, their crests
- *   catching the highlighter yellow. The light leans a little toward the cursor.
+ * - HeroWaves ("Gradient Waves"): dark graphite swells rolling along the bottom of the hero, their
+ *   crests catching the highlighter yellow. The light leans a little toward the cursor. The band is
+ *   short and wide, so maxAspect zooms the camera in until the sea reaches both edges.
  * - ThreadsBackdrop ("Threads"): many lines leave the left edge as one bundle and fan out, which is
  *   what Sapience does to a lecture. Used once, behind the closing call to action.
  *
@@ -32,7 +33,7 @@ export function HeroWaves({ className }: { className?: string }) {
         crestColor={light ? "#c08f00" : "#f5cf4a"}
         lightMode={light}
         speed={0.6}
-        maxAspect={1.6}
+        maxAspect={1.25}
         brightness={light ? 1 : 1.3}
         swellOnClick={false}
         className="opacity-100 transition-opacity duration-1000 ease-(--ease-out) starting:opacity-0"
