@@ -30,12 +30,13 @@ export function HeroRays({ className }: { className?: string }) {
         raysOrigin="top-center"
         raysColor={light ? "#6b5a2e" : "#fff6e3"}
         raysSpeed={0.6}
-        lightSpread={0.62}
-        rayLength={1.5}
+        lightSpread={0.5}
+        rayLength={1.35}
         rayDensity={1.1}
         raySharpness={0.3}
-        glow={0.5}
-        haze={0.35}
+        intensity={0.85}
+        glow={0.3}
+        haze={0.4}
         atmosphere={0.15}
         saturation={0.35}
         fadeDistance={1.1}
@@ -44,7 +45,7 @@ export function HeroRays({ className }: { className?: string }) {
         cursorShadow={false}
         clickPulse={false}
         lightMode={light}
-        opacity={0.9}
+        opacity={light ? 0.9 : 0.8}
         className="opacity-100 transition-opacity duration-1000 ease-(--ease-out) starting:opacity-0"
       />
     </div>

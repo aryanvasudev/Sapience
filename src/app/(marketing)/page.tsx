@@ -30,16 +30,21 @@ export default function LandingPage() {
         {/* Hero: a projector beam falls on the headline and the lesson window rising from below. */}
         <section aria-labelledby="hero-heading" className="relative -mt-16 pt-16">
           <HeroRays className="-z-10 h-[64rem] [mask-image:linear-gradient(to_bottom,rgb(0_0_0/0.45),black_14%,black_55%,transparent)]" />
+          {/* A soft pocket of background behind the copy, so the beam frames the text instead of washing it out. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[52rem] bg-[radial-gradient(ellipse_40rem_17rem_at_50%_25rem,var(--background)_0%,color-mix(in_oklab,var(--background)_78%,transparent)_42%,transparent_78%)]"
+          />
 
           <div className="mx-auto flex w-full max-w-7xl flex-col items-center px-4 pt-20 text-center md:px-6 md:pt-28">
-            <p className="enter inline-flex items-center gap-2 text-[0.8125rem] text-muted-foreground">
+            <p className="enter inline-flex items-center gap-2 text-[0.8125rem] text-foreground/70">
               <CheckpointMark className="size-2" />
               For lectures in English, Hindi and Hinglish
             </p>
             <h1 id="hero-heading" className="enter mt-6 max-w-[15ch] text-display font-semibold [--i:1] sm:max-w-[18ch]">
               Any YouTube lecture, turned into an interactive lesson
             </h1>
-            <p className="enter mt-6 max-w-[36rem] text-[1.0625rem] leading-relaxed text-muted-foreground [--i:2] md:text-lg">
+            <p className="enter mt-6 max-w-[36rem] text-[1.0625rem] leading-relaxed text-foreground/75 [--i:2] md:text-lg">
               Paste a link to a lecture you’re already watching. Sapience splits it into chapters, writes the notes,
               pauses for a question after each chapter, and answers your doubts from what the lecturer said.
             </p>
