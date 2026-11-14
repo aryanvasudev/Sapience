@@ -57,6 +57,8 @@ export const PreferencesSchema = z.object({
   defaultStyle: z.enum(TUTOR_STYLES).default("intuition"),
   tone: z.enum(TONES).default("direct"),
   pauseForCheckpoints: z.boolean().default(true),
+  /** When the student pauses a lecture, ask why (doubt, distracted, notes, break) and follow up. */
+  askWhyPaused: z.boolean().default(true),
 });
 export type Preferences = z.infer<typeof PreferencesSchema>;
 
@@ -342,3 +344,85 @@ export const RecapSchema = z.object({
   conceptsDue: z.number().int(),
 });
 export type Recap = z.infer<typeof RecapSchema>;
+
+// ---------------------------------------------------------------------------
+// Adaptive quiz ("Check yourself")
+// ---------------------------------------------------------------------------
+
+export const QuizLevelSchema = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]);
+export const TopicOutcomeSchema = z.enum(["solid", "getting_there", "rewatch"]);
+export type TopicOutcomeName = z.infer<typeof TopicOutcomeSchema>;
+
+export const QuizQuestionSchema = QuestionPublicSchema.extend({
+  level: QuizLevelSchema,
+  topic: z.number().int().min(0),
+  /** Whether this question follows a wrong answer on the same topic. */
+  followUp: z.boolean(),
+  startSeconds: z.number().int().min(0),
+  endSeconds: z.number().int().min(1),
+});
+export type QuizQuestion = z.infer<typeof QuizQuestionSchema>;
+
+export const QuizTopicSchema = z.object({
+  position: z.number().int().min(0),
+  title: z.string(),
+  asked: z.number().int(),
+  correct: z.number().int(),
+  bestLevel: z.number().int().min(0).max(4),
+  outcome: TopicOutcomeSchema.nullable(),
+});
+export type QuizTopic = z.infer<typeof QuizTopicSchema>;
+
+export const QuizSessionSchema = z.object({
+  sessionId: z.uuid(),
+  scope: z.enum(["lesson", "chapter"]),
+  status: z.enum(["active", "done"]),
+  topicIndex: z.number().int().min(0),
+  level: QuizLevelSchema,
+  topics: z.array(QuizTopicSchema),
+  question: QuizQuestionSchema.nullable(),
+});
+export type QuizSession = z.infer<typeof QuizSessionSchema>;
+
+export const QuizStartRequestSchema = z.object({
+  language: OutputLanguageSchema,
+  chapterPosition: z.number().int().min(0).optional(),
+});
+export type QuizStartRequest = z.infer<typeof QuizStartRequestSchema>;
+
+export const QuizAnswerRequestSchema = z.object({ questionId: z.uuid(), selectedIndex: z.number().int().min(0).max(3) });
+export const QuizAnswerResponseSchema = z.object({
+  result: AttemptResultSchema,
+  topicDone: z.object({ topic: z.number().int(), outcome: TopicOutcomeSchema }).nullable(),
+  session: QuizSessionSchema,
+});
+export type QuizAnswerResponse = z.infer<typeof QuizAnswerResponseSchema>;
+
+// ---------------------------------------------------------------------------
+// Flashcards
+// ---------------------------------------------------------------------------
+
+export const FlashcardSchema = z.object({
+  front: z.string(),
+  back: z.string(),
+  seconds: z.number().int().min(0).nullable(),
+  kind: z.enum(["term", "concept", "formula", "why"]),
+});
+export type Flashcard = z.infer<typeof FlashcardSchema>;
+
+export const FlashcardDeckSchema = z.object({
+  chapterPosition: z.number().int().min(0),
+  title: z.string(),
+  cards: z.array(FlashcardSchema),
+  /** Built from key terms because the AI was busy; not saved, so it can be regenerated. */
+  basic: z.boolean(),
+});
+export type FlashcardDeck = z.infer<typeof FlashcardDeckSchema>;
+
+export const FlashcardsRequestSchema = z.object({
+  language: OutputLanguageSchema,
+  /** Omit for the whole lecture. */
+  chapterPosition: z.number().int().min(0).optional(),
+});
+export const FlashcardsResponseSchema = z.object({ decks: z.array(FlashcardDeckSchema) });
+export type FlashcardsResponse = z.infer<typeof FlashcardsResponseSchema>;

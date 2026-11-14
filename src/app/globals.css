@@ -93,6 +93,7 @@
 
   --animate-enter: enter 560ms var(--ease-out) both;
   --animate-fade: fade 400ms var(--ease-out) both;
+  --animate-indeterminate: indeterminate 1.6s ease-in-out infinite;
 }
 
 :root {
@@ -351,6 +352,16 @@
 @keyframes fade {
   from {
     opacity: 0;
+  }
+}
+
+/* A working-but-unknown-length bar: a short fill sweeping left to right. */
+@keyframes indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
   }
 }
 

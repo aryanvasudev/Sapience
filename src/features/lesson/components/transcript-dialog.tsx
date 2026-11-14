@@ -23,6 +23,8 @@ import type { OutputLanguage } from "@/config/enums";
 import { requestJson } from "@/lib/client-api";
 import { CreateLessonResponseSchema, MAX_TRANSCRIPT_CHARS, type CreateLessonResponse } from "@/types/contracts";
 
+import { StepList } from "./journey";
+
 export function TranscriptDialog({
   videoUrl,
   language,
@@ -92,6 +94,20 @@ export function TranscriptDialog({
           <p id={`${id}-hint`} className={tooLong ? "text-[0.8125rem] text-destructive" : "text-[0.8125rem] text-faint"}>
             {tooLong ? "That's more than 200 KB. Paste a shorter transcript." : "Lines need their timestamps, like 1:05 or 1:02:03."}
           </p>
+          {pending ? (
+            <StepList
+              className="pt-1 animate-fade [animation-duration:200ms]"
+              steps={[
+                { label: "Transcript pasted", state: "done" },
+                {
+                  label: "Checking the video and starting your lesson",
+                  detail: "Notes are built from the transcript's words. The video plays while they're written.",
+                  state: "active",
+                },
+                { label: "Opening the lesson", state: "upcoming" },
+              ]}
+            />
+          ) : null}
           {error ? (
             <p role="alert" className="animate-fade text-sm text-destructive">
               {error}

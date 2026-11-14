@@ -17,9 +17,13 @@ import {
   NOTE_KINDS,
   OUTPUT_LANGUAGES,
   QUESTION_SOURCES,
+  QUIZ_SCOPES,
+  QUIZ_STATUSES,
   QUOTA_KINDS,
   RECALL_RATINGS,
   REVISION_STATES,
+  ROOM_ROLES,
+  WEAK_SPOT_SOURCES,
 } from "@/config/enums";
 
 const migrationsDir = join(process.cwd(), "supabase", "migrations");
@@ -29,10 +33,13 @@ const sql = readdirSync(migrationsDir)
   .map((f) => readFileSync(join(migrationsDir, f), "utf8"))
   .join("\n");
 
-/** Values of `constraint <name> check (<column> in ('a', 'b', ...))`. */
+/**
+ * Values of `constraint <name> check (<column> in ('a', 'b', ...))`. A later migration may drop
+ * and re-add a constraint, so the last definition wins.
+ */
 function constraintValues(name: string): string[] {
-  const re = new RegExp(`constraint\\s+${name}\\s+check\\s*\\(\\s*\\w+\\s+in\\s*\\(([^)]*)\\)`, "i");
-  const match = re.exec(sql);
+  const re = new RegExp(`constraint\\s+${name}\\s+check\\s*\\(\\s*\\w+\\s+in\\s*\\(([^)]*)\\)`, "gi");
+  const match = [...sql.matchAll(re)].at(-1);
   if (!match?.[1]) throw new Error(`Check constraint ${name} not found in migrations`);
   return [...match[1].matchAll(/'([^']*)'/g)].map((m) => m[1] ?? "");
 }
@@ -57,6 +64,11 @@ const CASES: [constraint: string, values: readonly string[]][] = [
   ["revision_reviews_rating_check", RECALL_RATINGS],
   ["notes_kind_check", NOTE_KINDS],
   ["user_api_keys_provider_check", BYOK_PROVIDERS],
+  ["weak_spots_source_check", WEAK_SPOT_SOURCES],
+  ["quiz_sessions_output_language_check", OUTPUT_LANGUAGES],
+  ["quiz_sessions_scope_check", QUIZ_SCOPES],
+  ["quiz_sessions_status_check", QUIZ_STATUSES],
+  ["room_members_role_check", ROOM_ROLES],
 ];
 
 describe("enum ↔ migration check constraints", () => {

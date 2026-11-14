@@ -38,7 +38,7 @@ export const JOB_ERROR_CODES = [
 ] as const;
 export type JobErrorCode = (typeof JOB_ERROR_CODES)[number];
 
-export const QUESTION_SOURCES = ["checkpoint", "tutor_check"] as const;
+export const QUESTION_SOURCES = ["checkpoint", "tutor_check", "quiz"] as const;
 export type QuestionSource = (typeof QUESTION_SOURCES)[number];
 
 export const AI_CALL_KINDS = [
@@ -50,6 +50,8 @@ export const AI_CALL_KINDS = [
   "check",
   "search",
   "whole_lecture",
+  "quiz",
+  "flashcards",
 ] as const;
 export type AiCallKind = (typeof AI_CALL_KINDS)[number];
 
@@ -76,6 +78,23 @@ export type RecallRating = (typeof RECALL_RATINGS)[number];
 
 export const NOTE_KINDS = ["note", "bookmark"] as const;
 export type NoteKind = (typeof NOTE_KINDS)[number];
+
+/** Where a weak spot came from. */
+export const WEAK_SPOT_SOURCES = ["checkpoint", "quiz", "doubt", "manual"] as const;
+export type WeakSpotSource = (typeof WEAK_SPOT_SOURCES)[number];
+
+export const QUIZ_SCOPES = ["lesson", "chapter"] as const;
+export type QuizScope = (typeof QUIZ_SCOPES)[number];
+
+export const QUIZ_STATUSES = ["active", "done"] as const;
+export type QuizStatus = (typeof QUIZ_STATUSES)[number];
+
+/** Adaptive quiz levels: a right answer moves up one, a wrong one moves down one. */
+export const QUIZ_LEVEL_NAMES = { 1: "Recall", 2: "Understand", 3: "Apply", 4: "Challenge" } as const;
+export type QuizLevel = keyof typeof QUIZ_LEVEL_NAMES;
+
+export const ROOM_ROLES = ["owner", "member"] as const;
+export type RoomRole = (typeof ROOM_ROLES)[number];
 
 export const QUOTA_KINDS = ["lesson", "ai"] as const;
 export type QuotaKind = (typeof QUOTA_KINDS)[number];

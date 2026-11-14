@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, useTransition } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 
 import { BookmarkIcon, DeleteIcon, EditIcon } from "@/components/icons";
 import { TimestampChip } from "@/components/shared/timestamp-chip";
@@ -10,27 +10,36 @@ import type { PersonalNote } from "@/lib/notes/service";
 
 import { addNote, deleteNote, updateNote } from "./actions";
 
-const bySeconds = (a: PersonalNote, b: PersonalNote) => (a.seconds ?? -1) - (b.seconds ?? -1) || a.createdAt.localeCompare(b.createdAt);
+export const bySeconds = (a: PersonalNote, b: PersonalNote) => (a.seconds ?? -1) - (b.seconds ?? -1) || a.createdAt.localeCompare(b.createdAt);
 
 /**
- * The student's own notes and bookmarks for this lecture (Section 3.2, P1). Written by the
- * student, so no AI label; each one is pinned to the playback time it was written at.
+ * The student's own notes and saved moments (bookmarks) for this lecture (Section 3.2, P1).
+ * Written by the student, so no AI label; each one is pinned to the playback time it was written
+ * at. The list is owned by the lesson screen, since moments are also saved from under the player.
  */
 export function MyNotesPanel({
   videoId,
-  initialNotes,
+  notes,
+  setNotes,
   time,
   onSeek,
+  focusSignal = 0,
 }: {
   videoId: string;
-  initialNotes: PersonalNote[];
+  notes: PersonalNote[];
+  setNotes: (update: (notes: PersonalNote[]) => PersonalNote[]) => void;
   /** Current playback time, in seconds. */
   time: number;
   onSeek: (seconds: number) => void;
+  /** Bump to focus the note box ("Taking notes" after a pause). */
+  focusSignal?: number;
 }) {
   const id = useId();
-  const [notes, setNotes] = useState(initialNotes);
+  const draftRef = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState("");
+  useEffect(() => {
+    if (focusSignal > 0) draftRef.current?.focus({ preventScroll: false });
+  }, [focusSignal]);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const at = Math.max(0, Math.floor(time));
@@ -57,6 +66,7 @@ export function MyNotesPanel({
           Note at <span className="font-mono text-[0.8125rem] text-muted-foreground tabular-nums">{formatTimestamp(at)}</span>
         </label>
         <textarea
+          ref={draftRef}
           id={`${id}-draft`}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -77,7 +87,7 @@ export function MyNotesPanel({
           </Button>
           <Button type="button" size="sm" variant="outline" disabled={pending} onClick={() => save("bookmark")}>
             <BookmarkIcon />
-            Bookmark <span className="font-mono text-[0.75rem] tabular-nums">{formatTimestamp(at)}</span>
+            Save moment <span className="font-mono text-[0.75rem] tabular-nums">{formatTimestamp(at)}</span>
           </Button>
         </div>
         {error ? (
@@ -89,8 +99,8 @@ export function MyNotesPanel({
 
       {notes.length === 0 ? (
         <p className="rounded-2xl border border-dashed p-5 text-sm leading-relaxed text-muted-foreground">
-          Your own notes and bookmarks for this lecture show up here, in lecture order. They&apos;re private to you and
-          appear on the exam sheet.
+          Your own notes and saved moments for this lecture show up here, in lecture order. Save a moment from under the
+          video (or press B). They&apos;re private to you and appear on the exam sheet.
         </p>
       ) : (
         <ol className="grid gap-2" aria-label="Your notes">
@@ -124,13 +134,13 @@ function NoteItem({
   const [value, setValue] = useState(note.content ?? "");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const label = note.kind === "bookmark" ? "Bookmark" : "Note";
+  const label = note.kind === "bookmark" ? "Saved moment" : "Note";
 
   return (
     <li className="grid gap-2 rounded-[10px] border bg-card p-3 dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.03)]">
       <div className="-my-0.5 -mr-1 flex items-center gap-2">
         {note.seconds !== null ? <TimestampChip seconds={note.seconds} onSeek={onSeek} label={label} /> : null}
-        {note.kind === "bookmark" ? <BookmarkIcon className="size-4 text-faint" aria-label="Bookmark" /> : null}
+        {note.kind === "bookmark" ? <BookmarkIcon className="size-4 text-faint" aria-label="Saved moment" /> : null}
         <div className="ml-auto flex gap-0.5">
           <Button
             type="button"

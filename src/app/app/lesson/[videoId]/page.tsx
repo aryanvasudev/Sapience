@@ -4,11 +4,13 @@ import { Suspense } from "react";
 
 import { OUTPUT_LANGUAGES, type OutputLanguage } from "@/config/enums";
 import { BuildLessonPanel } from "@/features/lesson/components/build-lesson-panel";
+import { LessonJourneySkeleton } from "@/features/lesson/components/journey";
 import { LessonScreen } from "@/features/lesson/components/lesson-screen";
 import { requireUser } from "@/lib/auth";
 import { getLessonStatus } from "@/lib/lessons/service";
 import { createClient } from "@/lib/supabase/server";
 import { listNotes } from "@/lib/notes/service";
+import { listWeakSpots } from "@/lib/weak-spots/service";
 import { loadLatestConversation } from "@/lib/tutor/service";
 import { parseStartTime } from "@/lib/youtube/parse-url";
 import { getCachedVideo } from "@/lib/youtube/videos";
@@ -40,7 +42,7 @@ async function LessonLoader({
   const supabase = await createClient();
   const [{ data: profile }, { data: progress }] = await Promise.all([
     supabase.from("profiles").select("preferences").eq("id", user.id).maybeSingle(),
-    supabase.from("lesson_progress").select("last_position_seconds, output_language").eq("youtube_video_id", videoId).maybeSingle(),
+    supabase.from("lesson_progress").select("last_position_seconds, furthest_seconds, output_language").eq("youtube_video_id", videoId).maybeSingle(),
   ]);
 
   const langParam = typeof query.lang === "string" ? query.lang : undefined;
@@ -53,10 +55,11 @@ async function LessonLoader({
   const tParam = typeof query.t === "string" ? parseStartTime(query.t) : null;
   const startSeconds = tParam ?? progress?.last_position_seconds ?? 0;
 
-  const [status, conversation, notes] = await Promise.all([
+  const [status, conversation, notes, weakSpots] = await Promise.all([
     getLessonStatus({ user, videoId, language }),
     loadLatestConversation(videoId),
     listNotes(videoId),
+    listWeakSpots(videoId),
   ]);
   if (!status) {
     const video = await getCachedVideo(videoId);
@@ -69,10 +72,13 @@ async function LessonLoader({
       videoId={videoId}
       language={language}
       startSeconds={startSeconds}
+      initialFurthest={progress?.furthest_seconds ?? 0}
       pauseForCheckpoints={preferences.pauseForCheckpoints}
+      askWhyPaused={preferences.askWhyPaused}
       defaultStyle={preferences.defaultStyle}
       initialMessages={conversation?.messages ?? []}
       initialNotes={notes}
+      initialWeakSpots={weakSpots}
     />
   );
 }
@@ -82,7 +88,7 @@ const PULSE = "animate-pulse bg-muted motion-reduce:animate-none";
 /** Mirrors the lesson screen: player, timeline, title and chapters; tabs and a panel on the right. */
 function LessonSkeleton() {
   return (
-    <div aria-hidden className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_25rem] xl:grid-cols-[minmax(0,1fr)_28rem]">
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_25rem] xl:grid-cols-[minmax(0,1fr)_28rem]">
       <div className="grid min-w-0 content-start gap-6">
         <div className="-mx-4 md:mx-0">
           <div className={`aspect-video md:rounded-2xl ${PULSE}`} />
@@ -96,6 +102,7 @@ function LessonSkeleton() {
           <div className={`h-7 w-2/3 rounded-md ${PULSE}`} />
           <div className="h-4 w-1/3 animate-pulse rounded bg-muted/70 motion-reduce:animate-none" />
         </div>
+        <LessonJourneySkeleton />
         <div className={`hidden h-56 rounded-2xl lg:block ${PULSE}`} />
       </div>
       <div className="grid content-start gap-5">

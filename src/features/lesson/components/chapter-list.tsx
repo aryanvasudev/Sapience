@@ -45,6 +45,8 @@ export function ChapterTimeline({
   time,
   currentPosition,
   playing,
+  weakRanges = [],
+  moments = [],
 }: {
   chapters: ChapterPublic[];
   attempts: LessonStatusResponse["attempts"];
@@ -52,6 +54,10 @@ export function ChapterTimeline({
   time: number;
   currentPosition: number | null;
   playing: boolean;
+  /** Weak spots, tinted on the track. */
+  weakRanges?: { startSeconds: number; endSeconds: number }[];
+  /** Saved moments, as small ticks under the track. */
+  moments?: number[];
 }) {
   const current = chapters.find((c) => c.position === currentPosition) ?? null;
   const end = Math.max(durationSeconds, chapters[chapters.length - 1]?.endSeconds ?? 0, 1);
@@ -69,6 +75,27 @@ export function ChapterTimeline({
           return (
             <li key={chapter.position} className="relative min-w-0 basis-0 rounded-full bg-muted" style={{ flexGrow: length }}>
               <span className="absolute inset-y-0 left-0 rounded-full bg-foreground/30" style={{ width: `${watched * 100}%` }} />
+              {weakRanges.map((r) => {
+                const from = Math.max(r.startSeconds, chapter.startSeconds);
+                const to = Math.min(r.endSeconds, chapter.endSeconds);
+                if (to <= from) return null;
+                return (
+                  <span
+                    key={`w${r.startSeconds}`}
+                    className="absolute inset-y-0 z-[1] rounded-full bg-destructive/55"
+                    style={{ left: `${((from - chapter.startSeconds) / length) * 100}%`, width: `${((to - from) / length) * 100}%` }}
+                  />
+                );
+              })}
+              {moments
+                .filter((m) => m >= chapter.startSeconds && m < chapter.endSeconds)
+                .map((m) => (
+                  <span
+                    key={`m${m}`}
+                    className="absolute top-full mt-1 size-1 -translate-x-1/2 rounded-full bg-foreground/45"
+                    style={{ left: `${((m - chapter.startSeconds) / length) * 100}%` }}
+                  />
+                ))}
               {chapter.checkpoint ? (
                 <CheckpointDiamond
                   state={state}

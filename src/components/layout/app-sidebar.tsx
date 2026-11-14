@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, type ComponentType } from "react";
 
-import { AddIcon, AutoStoriesIcon, EventRepeatIcon, HomeIcon, PersonAddIcon } from "@/components/icons";
+import { AddIcon, AutoStoriesIcon, CalendarMonthIcon, EventRepeatIcon, GroupsIcon, HomeIcon, PersonAddIcon } from "@/components/icons";
 import { SidebarUserMenu } from "@/components/layout/user-menu";
 import { LogoMark } from "@/components/layout/wordmark";
 import { Button } from "@/components/ui/button";
@@ -28,15 +28,26 @@ import { cn } from "@/lib/utils";
 /**
  * Signed-in sidebar. Structure from Efferd (https://efferd.com, @efferd/app-shell-4): an inset,
  * icon-collapsible sidebar with a primary action, navigation, and the account at the foot.
- * Adapted: Sapience's three destinations, the revision due count (the only reminder in the MVP),
- * a guest card in place of the changelog card, and an active surface that glides between rows.
+ * Adapted: Sapience's destinations in two groups (your own study, and studying with others), the
+ * revision due count, a guest card in place of the changelog card, and an active surface that
+ * glides between rows (one layout group across both groups).
  */
 type NavItem = { href: string; label: string; icon: ComponentType<{ className?: string }>; exact: boolean };
 
-const NAV: NavItem[] = [
-  { href: "/app", label: "Home", icon: HomeIcon, exact: true },
-  { href: "/app/library", label: "Library", icon: AutoStoriesIcon, exact: false },
-  { href: "/app/revision", label: "Revision", icon: EventRepeatIcon, exact: false },
+const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
+  {
+    label: "Study",
+    items: [
+      { href: "/app", label: "Home", icon: HomeIcon, exact: true },
+      { href: "/app/library", label: "Library", icon: AutoStoriesIcon, exact: false },
+      { href: "/app/revision", label: "Revision", icon: EventRepeatIcon, exact: false },
+      { href: "/app/calendar", label: "Calendar", icon: CalendarMonthIcon, exact: false },
+    ],
+  },
+  {
+    label: "Together",
+    items: [{ href: "/app/rooms", label: "Study rooms", icon: GroupsIcon, exact: false }],
+  },
 ];
 
 export type SidebarUser = { email: string | null; isAnonymous: boolean; isAdmin: boolean };
@@ -99,47 +110,49 @@ function SidebarView({ pathname, dueCount, user }: { pathname: string | null; du
           </SidebarMenu>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-faint">Study</SidebarGroupLabel>
-          <LayoutGroup id="sidebar-nav">
-            <SidebarMenu className="gap-0.5">
-              {NAV.map((item) => {
-                const active = pathname !== null && (item.exact ? pathname === item.href : pathname.startsWith(item.href));
-                const Icon = item.icon;
-                const showDue = item.href === "/app/revision" && dueCount > 0;
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={active}
-                      tooltip={item.label}
-                      className="relative isolate h-9 gap-2.5 px-2.5 group-data-[collapsible=icon]:justify-center text-muted-foreground transition-colors duration-150 ease-(--ease-out) hover:bg-transparent hover:text-foreground data-[active=true]:bg-transparent data-[active=true]:text-foreground [@media(hover:hover)]:hover:bg-sidebar-accent/60"
-                    >
-                      <Link href={item.href} aria-current={active ? "page" : undefined} onClick={() => setOpenMobile(false)}>
-                        {active ? (
-                          <motion.span
-                            layoutId="active"
-                            aria-hidden
-                            className="absolute inset-0 -z-10 rounded-md bg-sidebar-accent shadow-[inset_0_1px_0_rgb(255_255_255/0.04)] ring-1 ring-sidebar-border"
-                            transition={reduce ? { duration: 0 } : { type: "spring", duration: 0.34, bounce: 0.1 }}
-                          />
-                        ) : null}
-                        <Icon className="size-4.5!" />
-                        <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-                        {showDue ? (
-                          <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1.5 font-mono text-[0.6875rem] font-medium text-brand-foreground tabular-nums group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:top-0.5 group-data-[collapsible=icon]:right-0.5 group-data-[collapsible=icon]:h-2 group-data-[collapsible=icon]:min-w-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:text-[0px]">
-                            {dueCount > 99 ? "99+" : dueCount}
-                            <span className="sr-only"> due</span>
-                          </span>
-                        ) : null}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </LayoutGroup>
-        </SidebarGroup>
+        <LayoutGroup id="sidebar-nav">
+          {NAV_GROUPS.map((group) => (
+            <SidebarGroup key={group.label}>
+              <SidebarGroupLabel className="text-faint">{group.label}</SidebarGroupLabel>
+              <SidebarMenu className="gap-0.5">
+                {group.items.map((item) => {
+                  const active = pathname !== null && (item.exact ? pathname === item.href : pathname.startsWith(item.href));
+                  const Icon = item.icon;
+                  const showDue = item.href === "/app/revision" && dueCount > 0;
+                  return (
+                    <SidebarMenuItem key={item.href}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={active}
+                        tooltip={item.label}
+                        className="relative isolate h-9 gap-2.5 px-2.5 group-data-[collapsible=icon]:justify-center text-muted-foreground transition-colors duration-150 ease-(--ease-out) hover:bg-transparent hover:text-foreground data-[active=true]:bg-transparent data-[active=true]:text-foreground [@media(hover:hover)]:hover:bg-sidebar-accent/60"
+                      >
+                        <Link href={item.href} aria-current={active ? "page" : undefined} onClick={() => setOpenMobile(false)}>
+                          {active ? (
+                            <motion.span
+                              layoutId="active"
+                              aria-hidden
+                              className="absolute inset-0 -z-10 rounded-md bg-sidebar-accent shadow-[inset_0_1px_0_rgb(255_255_255/0.04)] ring-1 ring-sidebar-border"
+                              transition={reduce ? { duration: 0 } : { type: "spring", duration: 0.34, bounce: 0.1 }}
+                            />
+                          ) : null}
+                          <Icon className="size-4.5!" />
+                          <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                          {showDue ? (
+                            <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1.5 font-mono text-[0.6875rem] font-medium text-brand-foreground tabular-nums group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:top-0.5 group-data-[collapsible=icon]:right-0.5 group-data-[collapsible=icon]:h-2 group-data-[collapsible=icon]:min-w-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:text-[0px]">
+                              {dueCount > 99 ? "99+" : dueCount}
+                              <span className="sr-only"> due</span>
+                            </span>
+                          ) : null}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroup>
+          ))}
+        </LayoutGroup>
       </SidebarContent>
 
       <SidebarFooter className="gap-3 p-2">
@@ -204,6 +217,8 @@ const TITLES: [RegExp, string][] = [
   [/^\/app\/lesson\/[^/]+\/sheet/, "Exam sheet"],
   [/^\/app\/lesson\//, "Lesson"],
   [/^\/app\/library/, "Library"],
+  [/^\/app\/calendar/, "Calendar"],
+  [/^\/app\/rooms/, "Study rooms"],
   [/^\/app\/revision/, "Revision"],
   [/^\/app\/settings/, "Settings"],
   [/^\/app\/admin\/usage/, "Usage"],

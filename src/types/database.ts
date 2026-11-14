@@ -25,6 +25,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"calendar_feeds": {
+                  Row: {
+                    "created_at": string,"token": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"token": string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"token"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"concepts": {
                   Row: {
                     "created_at": string,"explanation_markdown": string | null,"id": string,"output_language": string | null,"question_id": string | null,"source": string,"source_seconds": number | null,"title": string,"updated_at": string,"user_id": string,"youtube_video_id": string | null
@@ -79,6 +93,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"lesson_flashcards": {
+                  Row: {
+                    "cards": NonNullable<Json>,"chapter_position": number,"created_at": string,"lesson_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "cards": NonNullable<Json>,"chapter_position": number,"created_at"?: string,"lesson_id": string
+                  }
+                  Update: {
+                    "cards"?: NonNullable<Json>,"chapter_position"?: number,"created_at"?: string,"lesson_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "lesson_flashcards_lesson_id_fkey"
+      columns: ["lesson_id"]
+isOneToOne: false
+      referencedRelation: "lessons"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"lesson_jobs": {
                   Row: {
                     "attempts": number,"byok_user_id": string | null,"created_at": string,"error_code": string | null,"id": string,"kind": string,"lesson_id": string,"locked_at": string | null,"payload": NonNullable<Json>,"run_after": string,"status": string,"updated_at": string
@@ -101,14 +135,14 @@ isOneToOne: false
                   ]
                 },"lesson_progress": {
                   Row: {
-                    "last_position_seconds": number,"output_language": string,"started_at": string,"updated_at": string,"user_id": string,"youtube_video_id": string
+                    "furthest_seconds": number,"last_position_seconds": number,"output_language": string,"started_at": string,"updated_at": string,"user_id": string,"youtube_video_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "last_position_seconds"?: number,"output_language": string,"started_at"?: string,"updated_at"?: string,"user_id": string,"youtube_video_id": string
+                    "furthest_seconds"?: number,"last_position_seconds"?: number,"output_language": string,"started_at"?: string,"updated_at"?: string,"user_id": string,"youtube_video_id": string
                   }
                   Update: {
-                    "last_position_seconds"?: number,"output_language"?: string,"started_at"?: string,"updated_at"?: string,"user_id"?: string,"youtube_video_id"?: string
+                    "furthest_seconds"?: number,"last_position_seconds"?: number,"output_language"?: string,"started_at"?: string,"updated_at"?: string,"user_id"?: string,"youtube_video_id"?: string
                   }
                   Relationships: [
                     {
@@ -209,14 +243,14 @@ isOneToOne: false
                   ]
                 },"questions": {
                   Row: {
-                    "at_seconds": number | null,"chapter_id": string | null,"concept": string,"correct_index": number,"created_at": string,"explanation": string,"id": string,"lesson_id": string | null,"misconception": string | null,"options": NonNullable<Json>,"owner_user_id": string | null,"prompt": string,"source": string,"youtube_video_id": string | null
+                    "at_seconds": number | null,"chapter_id": string | null,"concept": string,"correct_index": number,"created_at": string,"difficulty": number | null,"explanation": string,"id": string,"lesson_id": string | null,"misconception": string | null,"options": NonNullable<Json>,"owner_user_id": string | null,"prompt": string,"source": string,"youtube_video_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "at_seconds"?: number | null,"chapter_id"?: string | null,"concept": string,"correct_index": number,"created_at"?: string,"explanation": string,"id"?: string,"lesson_id"?: string | null,"misconception"?: string | null,"options": NonNullable<Json>,"owner_user_id"?: string | null,"prompt": string,"source": string,"youtube_video_id"?: string | null
+                    "at_seconds"?: number | null,"chapter_id"?: string | null,"concept": string,"correct_index": number,"created_at"?: string,"difficulty"?: number | null,"explanation": string,"id"?: string,"lesson_id"?: string | null,"misconception"?: string | null,"options": NonNullable<Json>,"owner_user_id"?: string | null,"prompt": string,"source": string,"youtube_video_id"?: string | null
                   }
                   Update: {
-                    "at_seconds"?: number | null,"chapter_id"?: string | null,"concept"?: string,"correct_index"?: number,"created_at"?: string,"explanation"?: string,"id"?: string,"lesson_id"?: string | null,"misconception"?: string | null,"options"?: NonNullable<Json>,"owner_user_id"?: string | null,"prompt"?: string,"source"?: string,"youtube_video_id"?: string | null
+                    "at_seconds"?: number | null,"chapter_id"?: string | null,"concept"?: string,"correct_index"?: number,"created_at"?: string,"difficulty"?: number | null,"explanation"?: string,"id"?: string,"lesson_id"?: string | null,"misconception"?: string | null,"options"?: NonNullable<Json>,"owner_user_id"?: string | null,"prompt"?: string,"source"?: string,"youtube_video_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -227,6 +261,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     },{
       foreignKeyName: "questions_lesson_id_fkey"
+      columns: ["lesson_id"]
+isOneToOne: false
+      referencedRelation: "lessons"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"quiz_sessions": {
+                  Row: {
+                    "chapter_position": number | null,"created_at": string,"id": string,"lesson_id": string | null,"output_language": string,"scope": string,"state": NonNullable<Json>,"status": string,"updated_at": string,"user_id": string,"youtube_video_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "chapter_position"?: number | null,"created_at"?: string,"id"?: string,"lesson_id"?: string | null,"output_language": string,"scope": string,"state"?: NonNullable<Json>,"status"?: string,"updated_at"?: string,"user_id": string,"youtube_video_id": string
+                  }
+                  Update: {
+                    "chapter_position"?: number | null,"created_at"?: string,"id"?: string,"lesson_id"?: string | null,"output_language"?: string,"scope"?: string,"state"?: NonNullable<Json>,"status"?: string,"updated_at"?: string,"user_id"?: string,"youtube_video_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "quiz_sessions_lesson_id_fkey"
       columns: ["lesson_id"]
 isOneToOne: false
       referencedRelation: "lessons"
@@ -273,6 +327,94 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"room_goal_checks": {
+                  Row: {
+                    "done_at": string,"goal_id": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "done_at"?: string,"goal_id": string,"user_id": string
+                  }
+                  Update: {
+                    "done_at"?: string,"goal_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "room_goal_checks_goal_id_fkey"
+      columns: ["goal_id"]
+isOneToOne: false
+      referencedRelation: "room_goals"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"room_goals": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"due_at": string | null,"id": string,"room_id": string,"title": string,"youtube_video_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"due_at"?: string | null,"id"?: string,"room_id": string,"title": string,"youtube_video_id"?: string | null
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"due_at"?: string | null,"id"?: string,"room_id"?: string,"title"?: string,"youtube_video_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "room_goals_room_id_fkey"
+      columns: ["room_id"]
+isOneToOne: false
+      referencedRelation: "study_rooms"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"room_members": {
+                  Row: {
+                    "display_name": string,"joined_at": string,"role": string,"room_id": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "display_name": string,"joined_at"?: string,"role"?: string,"room_id": string,"user_id": string
+                  }
+                  Update: {
+                    "display_name"?: string,"joined_at"?: string,"role"?: string,"room_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "room_members_room_id_fkey"
+      columns: ["room_id"]
+isOneToOne: false
+      referencedRelation: "study_rooms"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"study_events": {
+                  Row: {
+                    "created_at": string,"ends_at": string,"id": string,"notes": string | null,"seconds": number | null,"starts_at": string,"title": string,"updated_at": string,"user_id": string,"youtube_video_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"ends_at": string,"id"?: string,"notes"?: string | null,"seconds"?: number | null,"starts_at": string,"title": string,"updated_at"?: string,"user_id": string,"youtube_video_id"?: string | null
+                  }
+                  Update: {
+                    "created_at"?: string,"ends_at"?: string,"id"?: string,"notes"?: string | null,"seconds"?: number | null,"starts_at"?: string,"title"?: string,"updated_at"?: string,"user_id"?: string,"youtube_video_id"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"study_rooms": {
+                  Row: {
+                    "code": string,"created_at": string,"description": string | null,"id": string,"name": string,"owner_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "code": string,"created_at"?: string,"description"?: string | null,"id"?: string,"name": string,"owner_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "code"?: string,"created_at"?: string,"description"?: string | null,"id"?: string,"name"?: string,"owner_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"usage_daily": {
                   Row: {
                     "ai_requests": number,"day": string,"lessons_created": number,"user_id": string
@@ -315,6 +457,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"weak_spots": {
+                  Row: {
+                    "chapter_position": number | null,"created_at": string,"end_seconds": number,"id": string,"label": string,"resolved_at": string | null,"source": string,"start_seconds": number,"user_id": string,"youtube_video_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "chapter_position"?: number | null,"created_at"?: string,"end_seconds": number,"id"?: string,"label": string,"resolved_at"?: string | null,"source": string,"start_seconds": number,"user_id": string,"youtube_video_id": string
+                  }
+                  Update: {
+                    "chapter_position"?: number | null,"created_at"?: string,"end_seconds"?: number,"id"?: string,"label"?: string,"resolved_at"?: string | null,"source"?: string,"start_seconds"?: number,"user_id"?: string,"youtube_video_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 }
           }
           Views: {
@@ -353,6 +509,9 @@ isOneToOne: false
               "created": boolean,"job_id": string,"lesson_id": string
             }[]
                            },
+"create_room":
+{ Args: { "p_description": string,"p_display_name": string,"p_name": string }; Returns: string
+                           },
 "dispatchable_jobs":
 { Args: { "p_lesson_id"?: string,"p_max_running": number }; Returns: string[]
                            },
@@ -362,8 +521,20 @@ isOneToOne: false
 "global_lessons_today":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"is_room_member":
+{ Args: { "p_room_id": string }; Returns: boolean
+                           },
+"is_room_owner":
+{ Args: { "p_room_id": string }; Returns: boolean
+                           },
+"join_room":
+{ Args: { "p_code": string,"p_display_name": string }; Returns: string
+                           },
 "mark_chapters_failed":
 { Args: { "p_lesson_id": string,"p_positions": (number)[] }; Returns: undefined
+                           },
+"new_room_code":
+{ Args: Record<PropertyKey, never>; Returns: string
                            },
 "refresh_lesson_counters":
 { Args: { "p_lesson_id": string }; Returns: undefined
@@ -377,6 +548,19 @@ isOneToOne: false
 "retry_chapters":
 { Args: { "p_lesson_id": string,"p_position": number }; Returns: string[]
                            },
+"room_activity":
+{ Args: { "p_room_id": string }; Returns: {
+              "updated_at": string,"user_id": string,"video_title": string,"youtube_video_id": string
+            }[]
+                           },
+"room_progress":
+{ Args: { "p_room_id": string }; Returns: {
+              "furthest_seconds": number,"last_position_seconds": number,"updated_at": string,"user_id": string,"youtube_video_id": string
+            }[]
+                           },
+"rotate_room_code":
+{ Args: { "p_room_id": string }; Returns: string
+                           },
 "save_chapter_batch":
 { Args: { "p_details": Json,"p_lesson_id": string }; Returns: undefined
                            },
@@ -385,6 +569,11 @@ isOneToOne: false
                            },
 "save_outline":
 { Args: { "p_batches": Json,"p_lesson_id": string,"p_outline": Json }; Returns: string[]
+                           },
+"video_peers":
+{ Args: { "p_youtube_video_id": string }; Returns: {
+              "display_name": string,"furthest_seconds": number,"last_position_seconds": number,"room_id": string,"room_name": string,"updated_at": string,"user_id": string
+            }[]
                            }
           }
           Enums: {
