@@ -8,6 +8,16 @@
 import { CHAPTER_STATUSES, LESSON_SOURCES, LESSON_STATUSES, OUTPUT_LANGUAGES } from "@/config/enums";
 import type { ChapterPublic, KeyMoment, LessonPublic, QuestionPublic, Segment } from "@/types/contracts";
 
+/**
+ * Some models return notes with the two characters `\n` instead of line breaks, which Markdown
+ * shows as a stray "n". Only notes with no real line break are touched, and `\n` before a
+ * lowercase letter stays, so LaTeX such as `\nabla` or `\neq` survives. Pure.
+ */
+export function fixEscapedNewlines(markdown: string): string {
+  if (markdown.includes("\n") || !markdown.includes("\\n")) return markdown;
+  return markdown.replace(/\\r\\n|\\n(?![a-z])/g, "\n").replace(/\\t/g, "  ");
+}
+
 export type LessonRow = {
   youtube_video_id: string;
   output_language: string;
@@ -91,7 +101,7 @@ export function serializeLesson(lesson: LessonRow, chapters: ChapterRow[], quest
         startSeconds: c.start_seconds,
         endSeconds: c.end_seconds,
         summary: ready ? c.summary : null,
-        notesMarkdown: ready ? c.notes_markdown : null,
+        notesMarkdown: ready && c.notes_markdown ? fixEscapedNewlines(c.notes_markdown) : null,
         keyTerms: ready ? c.key_terms : [],
         formulas: ready ? c.formulas : [],
         keyMoments: ready ? keyMoments(c.key_moments) : [],

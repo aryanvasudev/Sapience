@@ -7,6 +7,7 @@
 import katex from "katex";
 
 import type { ChapterDetail, Checkpoint, Outline } from "./schemas/lesson";
+import { fixEscapedNewlines } from "@/lib/lessons/public-serializer";
 
 export type Validated<T> = { ok: true; value: T } | { ok: false; problems: string[] };
 
@@ -222,7 +223,7 @@ export function validateChapterDetail<D extends Omit<ChapterDetail, "segments"> 
     value: {
       ...detail,
       summary: detail.summary.trim(),
-      notesMarkdown: detail.notesMarkdown.trim(),
+      notesMarkdown: fixEscapedNewlines(detail.notesMarkdown.trim()),
       keyTerms,
       formulas,
       keyMoments,
