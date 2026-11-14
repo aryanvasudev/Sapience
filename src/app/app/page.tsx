@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { serverEnv } from "@/env";
 import { DashboardSections, DashboardSectionsSkeleton } from "@/features/dashboard/dashboard-sections";
 import { PasteBox } from "@/features/dashboard/paste-box";
 import { capabilities } from "@/lib/ai/provider";
@@ -35,6 +36,9 @@ async function PasteBoxLoader() {
   const supabase = await createClient();
   const { data: profile } = await supabase.from("profiles").select("preferences").eq("id", user.id).maybeSingle();
   return (
-    <PasteBox defaultLanguage={parsePreferences(profile?.preferences).language} videoLessons={capabilities().videoLessons} />
+    <PasteBox
+      defaultLanguage={parsePreferences(profile?.preferences).language}
+      videoLessons={serverEnv().LESSON_BUILD_MODE === "captions" || capabilities().videoLessons}
+    />
   );
 }

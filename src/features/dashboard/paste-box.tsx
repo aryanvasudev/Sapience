@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 
@@ -148,6 +149,17 @@ export function PasteBox({ defaultLanguage, videoLessons }: { defaultLanguage: O
         ) : error ? (
           <p role="alert" className="animate-fade text-sm text-destructive">
             {error.message}
+            {error.code === "video_needs_key" ? (
+              <>
+                {" "}
+                <Link
+                  href="/app/settings#ai-key"
+                  className="font-medium text-foreground underline decoration-foreground/30 underline-offset-4 transition-[text-decoration-color] duration-150 ease-(--ease-out) [@media(hover:hover)]:hover:decoration-foreground"
+                >
+                  Add your key in Settings
+                </Link>
+              </>
+            ) : null}
           </p>
         ) : (
           <p id={noteId} className="text-[0.8125rem] text-muted-foreground">

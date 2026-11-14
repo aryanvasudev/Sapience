@@ -23,6 +23,7 @@ const STATUS: Record<AppErrorCode, number> = {
   video_duration: 422,
   youtube_quota: 503,
   video_ai_unavailable: 422,
+  video_needs_key: 422,
   lesson_daily_limit: 429,
   guest_lesson_limit: 429,
   global_lesson_limit: 429,
@@ -48,6 +49,8 @@ export const ERROR_MESSAGES: Record<AppErrorCode, string> = {
   video_duration: "Lessons work for videos between 1 and 90 minutes.",
   youtube_quota: "Video lookup is busy. Try again in a few minutes.",
   video_ai_unavailable: "Paste this video's transcript to build the lesson.",
+  video_needs_key:
+    "This video has no captions Sapience can read. With your own free Gemini key, Sapience can build the lesson from the video itself.",
   lesson_daily_limit: "You've built your new lessons for today. Lessons that already exist still open.",
   guest_lesson_limit: "Create a free account to build more lessons today.",
   global_lesson_limit: "Sapience is busy today. Try a featured lesson.",

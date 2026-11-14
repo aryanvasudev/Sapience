@@ -144,6 +144,10 @@ export type TutorMode = (typeof TUTOR_MODES)[number];
 export const TUTOR_QUICK_ACTIONS = ["lost", "board"] as const;
 export type TutorQuickAction = (typeof TUTOR_QUICK_ACTIONS)[number];
 
+/** How a lesson is built from a pasted link: from YouTube's captions (text model), or by the video model watching it. */
+export const LESSON_BUILD_MODES = ["captions", "video"] as const;
+export type LessonBuildMode = (typeof LESSON_BUILD_MODES)[number];
+
 export const TUTOR_CLIP_MODES = ["on_demand", "always"] as const;
 export type TutorClipMode = (typeof TUTOR_CLIP_MODES)[number];
 
@@ -171,6 +175,7 @@ export const APP_ERROR_CODES = [
   "video_duration",
   "youtube_quota",
   "video_ai_unavailable",
+  "video_needs_key",
   "lesson_daily_limit",
   "guest_lesson_limit",
   "global_lesson_limit",

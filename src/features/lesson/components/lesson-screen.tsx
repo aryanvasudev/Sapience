@@ -572,7 +572,7 @@ export function LessonScreen({
               ) : null}
               {lesson.source === "transcript_paste" ? (
                 <span className="inline-flex h-5 items-center rounded-[5px] border px-1.5 text-[0.6875rem] text-muted-foreground">
-                  Built from pasted transcript
+                  Built from transcript
                 </span>
               ) : null}
             </div>

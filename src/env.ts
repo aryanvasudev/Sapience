@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   AI_TEXT_PROVIDERS,
   AI_VIDEO_PROVIDERS,
+  LESSON_BUILD_MODES,
   MEDIA_RESOLUTIONS,
   TUTOR_CLIP_MODES,
 } from "@/config/enums";
@@ -60,6 +61,7 @@ export const ServerEnvSchema = z
       z.array(z.email()),
     ),
 
+    LESSON_BUILD_MODE: z.enum(LESSON_BUILD_MODES).default("captions"),
     LESSON_MAX_VIDEO_MINUTES: int(90, 1),
     LESSON_SINGLE_PASS_MAX_MINUTES: int(15, 1),
     LESSON_BATCH_MAX_MINUTES: int(15, 1),
