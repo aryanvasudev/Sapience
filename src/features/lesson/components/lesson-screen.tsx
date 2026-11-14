@@ -623,7 +623,7 @@ export function LessonScreen({
 
       <aside
         aria-label="Study panel"
-        className="enter min-w-0 [--i:1] lg:sticky lg:top-[4.5rem] lg:-mx-1 lg:max-h-[calc(100svh-6.5rem)] lg:overflow-y-auto lg:overscroll-contain lg:px-1 lg:pb-1 lg:[scrollbar-width:thin]"
+        className="enter min-w-0 [--i:1] lg:sticky lg:top-[4.5rem] lg:-mx-3 lg:max-h-[calc(100svh-6.5rem)] lg:overflow-x-hidden lg:overflow-y-auto lg:overscroll-contain lg:px-3 lg:pb-1"
       >
         {chapterList ? (
           <section aria-label="Chapters" className="mb-8 lg:hidden">
