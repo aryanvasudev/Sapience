@@ -6,14 +6,38 @@ import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { ArrowForwardIcon, KeyboardArrowDownIcon, LinkIcon } from "@/components/icons";
 import { MorphText } from "@/components/motion/morph-text";
 import { Button } from "@/components/ui/button";
-import { OUTPUT_LANGUAGE_NAMES, OUTPUT_LANGUAGES, type OutputLanguage } from "@/config/enums";
+import { OUTPUT_LANGUAGE_NAMES, OUTPUT_LANGUAGES, type LessonStatus, type OutputLanguage } from "@/config/enums";
 import { FOCUS_PASTE_BOX_EVENT } from "@/features/dashboard/events";
+import { StepList, type ListStep } from "@/features/lesson/components/journey";
 import { TranscriptDialog } from "@/features/lesson/components/transcript-dialog";
 import { requestJson } from "@/lib/client-api";
 import { parseYouTubeUrl } from "@/lib/youtube/parse-url";
 import { cn } from "@/lib/utils";
 import { CreateLessonResponseSchema, type CreateLessonResponse } from "@/types/contracts";
 
+/** Where a submitted link is: the server checks it and finds or starts the lesson, then we navigate. */
+type Phase = { step: "checking" } | { step: "opening"; status: LessonStatus };
+
+/** The steps shown under the box while a link is being opened. Each one is a real request stage. */
+function openingSteps(phase: Phase): ListStep[] {
+  const opening = phase.step === "opening";
+  return [
+    { label: "Link recognised", state: "done" },
+    {
+      label: "Checking the video",
+      detail: "Making sure it's public, embeddable and 1 to 90 minutes long, then finding its lesson.",
+      state: opening ? "done" : "active",
+    },
+    {
+      label: opening && phase.status === "ready" ? "Lesson found. Opening it" : opening ? "Lesson started. Opening it" : "Opening the lesson",
+      detail:
+        opening && phase.status === "ready"
+          ? "Someone already built it, so it's free and instant."
+          : "The video plays straight away. Chapters and notes fill in while you watch.",
+      state: opening ? "active" : "upcoming",
+    },
+  ];
+}
 
 /** The single input that starts a lesson (Section 5.1, 5.12). */
 export function PasteBox({ defaultLanguage, videoLessons }: { defaultLanguage: OutputLanguage; videoLessons: boolean }) {
@@ -24,6 +48,7 @@ export function PasteBox({ defaultLanguage, videoLessons }: { defaultLanguage: O
   const [language, setLanguage] = useState<OutputLanguage>(defaultLanguage);
   const [error, setError] = useState<{ code: string; message: string } | null>(null);
   const [pending, startTransition] = useTransition();
+  const [phase, setPhase] = useState<Phase | null>(null);
   const parsed = parseYouTubeUrl(url);
   const canonicalUrl = parsed ? `https://www.youtube.com/watch?v=${parsed.videoId}` : null;
 
@@ -46,10 +71,16 @@ export function PasteBox({ defaultLanguage, videoLessons }: { defaultLanguage: O
       setError({ code: "invalid_url", message: "That doesn't look like a YouTube video link." });
       return;
     }
+    setPhase({ step: "checking" });
     startTransition(async () => {
       const result = await requestJson("/api/lessons", CreateLessonResponseSchema, { body: { url, language } });
-      if (result.ok) open(result.data);
-      else setError({ code: result.code, message: result.message });
+      if (result.ok) {
+        setPhase({ step: "opening", status: result.data.status });
+        open(result.data);
+      } else {
+        setPhase(null);
+        setError({ code: result.code, message: result.message });
+      }
     });
   };
 
@@ -112,14 +143,16 @@ export function PasteBox({ defaultLanguage, videoLessons }: { defaultLanguage: O
             <KeyboardArrowDownIcon className="pointer-events-none absolute top-1/2 right-2.5 size-4.5 -translate-y-1/2 text-faint" />
           </div>
           <Button type="submit" disabled={pending || url.trim().length === 0} className="h-11 rounded-[10px] px-4 md:h-11">
-            <MorphText>{pending ? "Checking the video…" : "Build lesson"}</MorphText>
+            <MorphText>{!pending ? "Build lesson" : phase?.step === "opening" ? "Opening…" : "Checking…"}</MorphText>
             {pending ? null : <ArrowForwardIcon data-icon="inline-end" />}
           </Button>
         </div>
       </div>
 
       <div className="min-h-5 px-1">
-        {error ? (
+        {pending && phase ? (
+          <StepList steps={openingSteps(phase)} className="animate-fade [animation-duration:200ms]" />
+        ) : error ? (
           <p role="alert" className="animate-fade text-sm text-destructive">
             {error.message}
           </p>

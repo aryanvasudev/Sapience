@@ -6,7 +6,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { DescriptionIcon, ForumIcon, NotesIcon, OpenInNewIcon, QuizIcon, StickyNote2Icon } from "@/components/icons";
+import { DescriptionIcon, ForumIcon, NotesIcon, OpenInNewIcon, ProgressActivityIcon, QuizIcon, RefreshIcon, StickyNote2Icon } from "@/components/icons";
+import { MorphText } from "@/components/motion/morph-text";
 import { SectionHeading } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { MorphTabsList } from "@/components/ui/morph-tabs";
@@ -29,12 +30,12 @@ import { checkpointRange, doubtRange, revisionPlaylist, weakTopics, type TimeRan
 import type { AttemptResult, ChapterPublic, LessonStatusResponse } from "@/types/contracts";
 
 import { useCheckpoints } from "../hooks/use-checkpoints";
-import { useLessonStatus } from "../hooks/use-lesson-status";
+import { isBuilding, useLessonStatus } from "../hooks/use-lesson-status";
 import { usePlaybackClock, usePlayerKeyboard, useProgressSaving } from "../hooks/use-playback";
 import { useYouTubePlayer } from "../hooks/use-youtube-player";
 import { ChapterList, ChapterTimeline } from "./chapter-list";
 import { CheckpointCard } from "./checkpoint-card";
-import { LessonStatusBanner } from "./lesson-status-banner";
+import { LessonJourney } from "./journey";
 import { NotesPanel } from "./notes-panel";
 import { BREAK_MINUTES, PauseCheckIn } from "./pause-check-in";
 import { PlayerBar } from "./player-bar";
@@ -80,6 +81,7 @@ export function LessonScreen({
   videoId,
   language,
   startSeconds,
+  initialFurthest = 0,
   pauseForCheckpoints,
   askWhyPaused,
   defaultStyle,
@@ -91,6 +93,8 @@ export function LessonScreen({
   videoId: string;
   language: OutputLanguage;
   startSeconds: number;
+  /** Furthest point already played in earlier visits (lesson_progress.furthest_seconds). */
+  initialFurthest?: number;
   pauseForCheckpoints: boolean;
   askWhyPaused: boolean;
   defaultStyle: TutorStyle;
@@ -103,7 +107,7 @@ export function LessonScreen({
   const player = useYouTubePlayer(videoId, startSeconds);
   const { mount: mountPlayer, error: playerError, getCurrentTime, ready: playerReady, play, pause } = player;
   const time = usePlaybackClock(player);
-  useProgressSaving(player, videoId, language);
+  const furthest = useProgressSaving(player, videoId, language, initialFurthest);
   usePlayerKeyboard(player);
 
   const lesson = data.lesson;
@@ -164,6 +168,9 @@ export function LessonScreen({
   });
   // The recap opens when the video ends (after any final checkpoint) or from the chapter list.
   const [recapOpen, setRecapOpen] = useState(false);
+  // For the journey's last step: the recap has been seen once this visit.
+  const [recapSeen, setRecapSeen] = useState(false);
+  if (recapOpen && !recapSeen) setRecapSeen(true);
   const [endedSeen, setEndedSeen] = useState(player.state === "ended");
   if ((player.state === "ended") !== endedSeen) {
     setEndedSeen(player.state === "ended");
@@ -445,6 +452,23 @@ export function LessonScreen({
       />
     ) : null;
 
+  const canOpenRecap = lesson !== undefined && !activeQuestion;
+  const journeyAction =
+    data.status === "failed" && data.progress.chaptersTotal === 0 ? (
+      <>
+        <Button type="button" size="sm" onClick={() => void retry()} disabled={retrying === "lesson"}>
+          {retrying === "lesson" ? <ProgressActivityIcon className="animate-spin motion-reduce:animate-none" /> : <RefreshIcon />}
+          <MorphText>{retrying === "lesson" ? "Retrying…" : "Retry"}</MorphText>
+        </Button>
+        {transcriptAction}
+      </>
+    ) : stalled && isBuilding(data) ? (
+      <Button type="button" variant="outline" size="sm" onClick={() => void refresh()}>
+        <RefreshIcon />
+        Check again
+      </Button>
+    ) : null;
+
   const weakCount = topics.length;
   const savedCount = notes.length;
 
@@ -572,13 +596,21 @@ export function LessonScreen({
           </div>
         </header>
 
-        <LessonStatusBanner
-          data={data}
-          stalled={stalled}
-          onRetryLesson={() => void retry()}
-          onRefresh={() => void refresh()}
-          retrying={retrying === "lesson"}
-          transcriptAction={transcriptAction}
+        {/* Everything from "video checked" to "recap seen", and what is happening right now. */}
+        <LessonJourney
+          input={{
+            data,
+            stalled,
+            furthestSeconds: furthest,
+            ended: player.state === "ended",
+            playing: player.state === "playing" || player.state === "buffering",
+            checkpointsAnswered,
+            recapSeen,
+            checkpointOpen: activeQuestion && activeChapter ? activeChapter.position : null,
+            currentChapter: current ? { position: current.position, title: current.title } : null,
+          }}
+          action={journeyAction}
+          onStep={canOpenRecap ? { recap: () => setRecapOpen(true) } : undefined}
         />
 
         {chapterList ? (

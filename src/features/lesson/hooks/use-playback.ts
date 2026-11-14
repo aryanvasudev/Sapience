@@ -35,9 +35,16 @@ export function usePlaybackClock(player: YouTubePlayerApi): number {
  * furthest point actually played (classmates in a study room see it), sampling once a second and
  * ignoring jumps, so seeking ahead doesn't count as watching.
  */
-export function useProgressSaving(player: YouTubePlayerApi, videoId: string, language: OutputLanguage) {
+export function useProgressSaving(
+  player: YouTubePlayerApi,
+  videoId: string,
+  language: OutputLanguage,
+  initialFurthest = 0,
+): number {
   const lastSaved = useRef<number | null>(null);
-  const furthest = useRef(0);
+  const furthest = useRef(initialFurthest);
+  // Whole seconds, for the lesson journey; the ref keeps the precise value for saving.
+  const [furthestShown, setFurthestShown] = useState(Math.floor(initialFurthest));
   const lastSample = useRef<number | null>(null);
   const { state, ready, getCurrentTime } = player;
 
@@ -49,7 +56,10 @@ export function useProgressSaving(player: YouTubePlayerApi, videoId: string, lan
     const sample = () => {
       const now = getCurrentTime();
       const prev = lastSample.current;
-      if (prev !== null && now >= prev && now - prev <= MAX_PLAYED_STEP_SECONDS) furthest.current = Math.max(furthest.current, now);
+      if (prev !== null && now >= prev && now - prev <= MAX_PLAYED_STEP_SECONDS) {
+        furthest.current = Math.max(furthest.current, now);
+        setFurthestShown(Math.floor(furthest.current));
+      }
       lastSample.current = now;
     };
     sample();
@@ -81,6 +91,8 @@ export function useProgressSaving(player: YouTubePlayerApi, videoId: string, lan
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [state, ready, getCurrentTime, videoId, language]);
+
+  return furthestShown;
 }
 
 /** Space/K toggles play, J/L seek ±10 s — only when focus isn't in a text field (Section 5.2). */
