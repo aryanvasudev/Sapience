@@ -8,7 +8,7 @@ import { SiteFooter } from "@/components/efferd/site-footer";
 import { SiteHeader } from "@/components/efferd/site-header";
 import { ArrowForwardIcon } from "@/components/icons";
 import { CheckpointMark } from "@/components/layout/wordmark";
-import { HeroRays } from "@/components/marketing/hero-shader";
+import { HeroWaves } from "@/components/marketing/hero-shader";
 import { LessonPreview } from "@/components/marketing/lesson-preview";
 import { SourcesSection } from "@/components/marketing/sources-section";
 import { Button } from "@/components/ui/button";
@@ -27,10 +27,10 @@ export default function LandingPage() {
       />
 
       <main id="main" className="flex-1">
-        {/* Hero: a projector beam falls on the headline and the lesson window rising from below. */}
+        {/* Hero: dark swells roll in under the headline, their crests catching the accent. */}
         <section aria-labelledby="hero-heading" className="relative -mt-16 pt-16">
-          <HeroRays className="-z-10 h-[64rem] [mask-image:linear-gradient(to_bottom,rgb(0_0_0/0.45),black_14%,black_55%,transparent)]" />
-          {/* A soft pocket of background behind the copy, so the beam frames the text instead of washing it out. */}
+          <HeroWaves className="-z-10 h-[56rem] [mask-image:linear-gradient(to_bottom,black,black_80%,transparent)]" />
+          {/* A soft pocket of background behind the copy, so the waves frame the text instead of crossing it. */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[52rem] bg-[radial-gradient(ellipse_40rem_17rem_at_50%_25rem,var(--background)_0%,color-mix(in_oklab,var(--background)_78%,transparent)_42%,transparent_78%)]"

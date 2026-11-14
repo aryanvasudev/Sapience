@@ -9,43 +9,31 @@ import { cn } from "@/lib/utils";
 /*
  * The landing page's two shaders, both from React Bits (https://reactbits.dev).
  *
- * - HeroRays ("Light Rays"): a projector beam falling from the top of a dark lecture hall onto the
- *   lesson window below. Chalk-white with a trace of warmth; it leans a little toward the cursor.
+ * - HeroWaves ("Gradient Waves"): dark graphite swells rolling in under the headline, their crests
+ *   catching the highlighter yellow. The light leans a little toward the cursor.
  * - ThreadsBackdrop ("Threads"): many lines leave the left edge as one bundle and fan out, which is
  *   what Sapience does to a lecture. Used once, behind the closing call to action.
  *
  * Both load lazily on the client, never block first paint, stop rendering while off screen or in
  * a hidden tab, and settle to a still frame with reduced motion.
  */
-const LightRays = dynamic(() => import("@/components/reactbits/light-rays"), { ssr: false, loading: () => null });
+const GradientWaves = dynamic(() => import("@/components/reactbits/gradient-waves"), { ssr: false, loading: () => null });
 const Threads = dynamic(() => import("@/components/reactbits/threads"), { ssr: false, loading: () => null });
 
-export function HeroRays({ className }: { className?: string }) {
+export function HeroWaves({ className }: { className?: string }) {
   const { resolvedTheme } = useTheme();
   const light = resolvedTheme === "light";
   return (
     <div aria-hidden className={cn("pointer-events-none absolute inset-0 overflow-hidden", className)}>
-      <LightRays
+      <GradientWaves
         key={resolvedTheme ?? "initial"}
-        raysOrigin="top-center"
-        raysColor={light ? "#6b5a2e" : "#fff6e3"}
-        raysSpeed={0.6}
-        lightSpread={0.5}
-        rayLength={1.35}
-        rayDensity={1.1}
-        raySharpness={0.3}
-        intensity={0.85}
-        glow={0.3}
-        haze={0.4}
-        atmosphere={0.15}
-        saturation={0.35}
-        fadeDistance={1.1}
-        followMouse
-        mouseInfluence={0.06}
-        cursorShadow={false}
-        clickPulse={false}
+        horizonColor={light ? "#d8d2c3" : "#34322d"}
+        waveColor={light ? "#f3f0e8" : "#161618"}
+        crestColor={light ? "#c08f00" : "#f5cf4a"}
         lightMode={light}
-        opacity={light ? 0.9 : 0.8}
+        speed={0.6}
+        brightness={light ? 1 : 1.3}
+        swellOnClick={false}
         className="opacity-100 transition-opacity duration-1000 ease-(--ease-out) starting:opacity-0"
       />
     </div>

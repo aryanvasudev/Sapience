@@ -98,7 +98,7 @@ Nothing external is connected yet. Each of these needs a person with the account
 - **Type:** Geist for everything, Geist Mono for timestamps, counts and figures. No serif.
 - **Signature:** the yellow checkpoint diamond (on the chapter timeline, the logo tile and every checkpoint) and mono timestamp chips.
 - **App shell:** inset, icon-collapsible sidebar (Efferd `app-shell-4`); the sidebar folds to icons on lesson pages. Pages open with `PageHeader` (`src/components/layout/page-header.tsx`).
-- **Marketing:** a React Bits `LightRays` shader as a projector beam over the hero and a live lesson window that plays once; React Bits `Threads` behind the closing call to action and the sign-in panel.
+- **Marketing:** a React Bits `GradientWaves` shader (graphite swells with highlighter-yellow crests) behind the hero and a live lesson window that plays once; React Bits `Threads` behind the closing call to action and the sign-in panel.
 - Tokens live in `src/app/globals.css`, including the lecture-board colours (`--board`, `--chalk`) and the easing curves (`--ease-out: cubic-bezier(0.22, 1, 0.36, 1)`).
 
 ### Icons
@@ -122,7 +122,7 @@ Both registries are set up in `components.json`. Each component was installed wi
 | Where | Component | Source |
 | --- | --- | --- |
 | Signed-in shell | `src/components/layout/app-sidebar.tsx`, `src/app/app/layout.tsx` | Efferd `@efferd/app-shell-4` (shadcn `sidebar`) |
-| Landing hero shader | `src/components/reactbits/light-rays.tsx` | ReactBits `@react-bits/LightRays-TS-TW` |
+| Landing hero shader | `src/components/reactbits/gradient-waves.tsx` | ReactBits `@react-bits/GradientWaves-TS-TW` |
 | CTA and sign-in shader | `src/components/reactbits/threads.tsx` | ReactBits `@react-bits/Threads-TS-TW` |
 | Landing features | `src/components/efferd/feature-section.tsx` | Efferd `@efferd/features-6` |
 | Sign-in / sign-up | `src/app/(auth)/layout.tsx` | Efferd `@efferd/auth-2` |
