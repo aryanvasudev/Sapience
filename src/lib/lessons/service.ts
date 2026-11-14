@@ -18,6 +18,7 @@ import { createClient } from "@/lib/supabase/server";
 import { parseTranscript, type TranscriptLine } from "@/lib/transcript/parse";
 import { segmentTranscript, type TranscriptSegment } from "@/lib/transcript/segment";
 import { fetchCaptionLines } from "@/lib/youtube/captions";
+import { fetchTranscriptAi, parseTranscriptAi } from "@/lib/youtube/transcript-ai";
 import { parseYouTubeUrl } from "@/lib/youtube/parse-url";
 import { getCachedVideo, getEligibleVideo, toVideoPublic, type VideoRecord } from "@/lib/youtube/videos";
 import type { CreateLessonResponse, LessonStatusResponse } from "@/types/contracts";
@@ -31,6 +32,20 @@ const WATCHDOG_INTERVAL_MS = 30_000;
 const MIN_TRANSCRIPT_LINES = 5;
 
 type FirstJob = { kind: "full" | "outline" | "transcript"; payload: Json; source: "gemini_video" | "transcript_paste" };
+
+/**
+ * The video's own captions: straight from YouTube, then from youtube-transcript.ai when YouTube
+ * refuses this server (it refuses Vercel). Null when neither has them.
+ */
+async function videoTranscriptLines(video: VideoRecord, language: OutputLanguage): Promise<TranscriptLine[] | null> {
+  const direct = await fetchCaptionLines(video.youtubeVideoId, language);
+  if (direct) return direct;
+  const apiKey = serverEnv().YOUTUBE_TRANSCRIPT_AI_KEY;
+  if (!apiKey) return null;
+  const markdown = await fetchTranscriptAi(video.youtubeVideoId, apiKey);
+  const lines = markdown ? parseTranscriptAi(markdown, video.durationSeconds) : [];
+  return lines.length > 0 ? lines : null;
+}
 
 /** A transcript job from timestamped lines, or null if there's too little to build from. */
 function transcriptJob(lines: TranscriptLine[], durationSeconds: number): FirstJob | null {
@@ -62,7 +77,7 @@ async function planFirstJob(video: VideoRecord, transcript: string | undefined, 
   }
 
   if (serverEnv().LESSON_BUILD_MODE === "captions") {
-    const [lines, key] = await Promise.all([fetchCaptionLines(video.youtubeVideoId, language), userKeyFor(userId, "video")]);
+    const [lines, key] = await Promise.all([videoTranscriptLines(video, language), userKeyFor(userId, "video")]);
     const job = lines ? transcriptJob(lines, video.durationSeconds) : null;
     if (job) return job;
     if (key) return videoJob(video);
