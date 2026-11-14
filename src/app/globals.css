@@ -154,6 +154,10 @@
   --sidebar-accent-foreground: #111113;
   --sidebar-border: rgb(17 17 19 / 0.08);
   --sidebar-ring: #c08f00;
+
+  /* Scrollbars: a thin graphite thumb on a clear track, so they sit inside the design. */
+  --scrollbar: rgb(17 17 19 / 0.2);
+  color-scheme: light;
 }
 
 /* Dark tokens apply on screen only: printed pages (the exam sheet) are always ink on paper. */
@@ -210,15 +214,21 @@
     --sidebar-accent-foreground: #ededef;
     --sidebar-border: rgb(237 237 239 / 0.07);
     --sidebar-ring: #f5cf4a;
+
+    --scrollbar: rgb(237 237 239 / 0.16);
+    color-scheme: dark;
   }
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    scrollbar-width: thin;
   }
   html {
     @apply font-sans;
+    /* Inherited, so every scroll area (the inset panel, the study panel, menus) picks it up. */
+    scrollbar-color: var(--scrollbar) transparent;
     -webkit-text-size-adjust: 100%;
   }
   body {
