@@ -5,6 +5,7 @@ import { useId, useState, useTransition } from "react";
 import { ArrowOutwardIcon, CheckCircleIcon, EditCalendarIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DatePicker, TimePicker } from "@/components/ui/date-time-picker";
 import { Input } from "@/components/ui/input";
 import { SelectField } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -213,13 +214,13 @@ function PlanForm({
             <label htmlFor={`${id}-date`} className="text-sm font-medium">
               Date
             </label>
-            <Input id={`${id}-date`} type="date" required value={date} onChange={(e) => setDate(e.target.value)} />
+            <DatePicker id={`${id}-date`} value={date} onChange={setDate} />
           </div>
           <div className="grid gap-2">
             <label htmlFor={`${id}-time`} className="text-sm font-medium">
               Starts
             </label>
-            <Input id={`${id}-time`} type="time" required value={time} onChange={(e) => setTime(e.target.value)} />
+            <TimePicker id={`${id}-time`} value={time} onChange={setTime} />
           </div>
           <div className="grid gap-2">
             <label htmlFor={`${id}-duration`} className="text-sm font-medium">

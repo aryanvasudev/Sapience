@@ -5,6 +5,7 @@ import { useId, useState, useTransition } from "react";
 import { AddIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DatePicker, TimePicker } from "@/components/ui/date-time-picker";
 import { Input } from "@/components/ui/input";
 import { SelectField } from "@/components/ui/select";
 
@@ -20,6 +21,8 @@ export function AddGoalDialog({ roomId, lectures }: { roomId: string; lectures: 
   const id = useId();
   const [open, setOpen] = useState(false);
   const [lecture, setLecture] = useState<string>(lectures.length > 0 ? "" : PASTE);
+  const [dueDate, setDueDate] = useState("");
+  const [dueTime, setDueTime] = useState("23:59");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -61,6 +64,8 @@ export function AddGoalDialog({ roomId, lectures }: { roomId: string; lectures: 
               if (!result.ok) return setError(result.message);
               setOpen(false);
               setLecture(lectures.length > 0 ? "" : PASTE);
+              setDueDate("");
+              setDueTime("23:59");
             });
           }}
         >
@@ -88,10 +93,10 @@ export function AddGoalDialog({ roomId, lectures }: { roomId: string; lectures: 
           </Field>
           <div className="grid grid-cols-[1fr_8rem] gap-3">
             <Field id={`${id}-date`} label="Due (optional)">
-              <Input id={`${id}-date`} name="dueDate" type="date" />
+              <DatePicker id={`${id}-date`} name="dueDate" value={dueDate} onChange={setDueDate} placeholder="No due date" clearable />
             </Field>
             <Field id={`${id}-time`} label="Time">
-              <Input id={`${id}-time`} name="dueTime" type="time" defaultValue="23:59" />
+              <TimePicker id={`${id}-time`} name="dueTime" value={dueTime} onChange={setDueTime} />
             </Field>
           </div>
           <FormError message={error} />
