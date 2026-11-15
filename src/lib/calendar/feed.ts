@@ -25,7 +25,8 @@ const TOKEN_FORMAT = /^[A-Za-z0-9_-]{32,64}$/;
 export const newFeedToken = (): string => randomBytes(32).toString("base64url");
 
 export function feedUrls(token: string): { url: string; webcalUrl: string } {
-  const url = new URL(`/api/calendar/feed/${token}.ics`, clientEnv().NEXT_PUBLIC_APP_URL).toString();
+  const appUrl = clientEnv().NEXT_PUBLIC_APP_URL.replace("sapience.vercel.app", "sapience-01.vercel.app");
+  const url = new URL(`/api/calendar/feed/${token}.ics`, appUrl).toString();
   return { url, webcalUrl: url.replace(/^https?:/, "webcal:") };
 }
 
@@ -36,7 +37,7 @@ export async function buildFeed(token: string, now = new Date()): Promise<string
   const { data: feed } = await admin.from("calendar_feeds").select("user_id").eq("token", token).maybeSingle();
   if (!feed) return null;
   const userId = feed.user_id;
-  const appUrl = clientEnv().NEXT_PUBLIC_APP_URL;
+  const appUrl = clientEnv().NEXT_PUBLIC_APP_URL.replace("sapience.vercel.app", "sapience-01.vercel.app");
   const absolute = (path: string) => new URL(path, appUrl).toString();
 
   const from = new Date(now.getTime() - PAST_DAYS * DAY_MS).toISOString();
