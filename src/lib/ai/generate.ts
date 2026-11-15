@@ -140,7 +140,7 @@ const VIDEO_HANDOVER_TIMEOUT_MS = 120_000;
  * A text model that isn't the last in its chain gets this long before the next one takes over.
  * Short enough that a first call plus a repair call still fit the job's 300 s budget.
  */
-const TEXT_HANDOVER_TIMEOUT_MS = 60_000;
+const TEXT_HANDOVER_TIMEOUT_MS = 120_000;
 
 /** A timeout or a server-side error is the model's problem, not the input's: try the next one. */
 function handsOverToNextModel(error: unknown): boolean {

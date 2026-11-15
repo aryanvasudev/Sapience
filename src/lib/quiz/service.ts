@@ -75,11 +75,15 @@ function validator(chapter: ChapterPublic) {
     }
     const segment = chapter.segments.find((s) => s.id === q.segmentRef.trim());
     // An unknown ref isn't worth a retry: fall back to the whole chapter.
-    const startSeconds = segment ? Math.max(chapter.startSeconds, segment.startSeconds - 15) : chapter.startSeconds;
-    const endSeconds = segment ? Math.max(segment.endSeconds, startSeconds + 20) : chapter.endSeconds;
+    const chapterLen = Math.max(1, chapter.endSeconds - chapter.startSeconds);
+    const startCandidate = segment ? Math.max(chapter.startSeconds, segment.startSeconds - 15) : chapter.startSeconds;
+    const endCandidate = segment ? Math.max(segment.endSeconds, startCandidate + 20) : chapter.endSeconds;
+    const endClamped = Math.min(endCandidate, chapter.endSeconds);
+    const startSeconds = endClamped - startCandidate >= 10 ? startCandidate : Math.max(chapter.startSeconds, endClamped - 20);
+    const endSeconds = Math.max(endClamped, startSeconds + Math.min(10, chapterLen));
     return {
       ok: true,
-      value: { ...q, options, question: q.question.trim(), concept: q.concept.trim(), startSeconds, endSeconds: Math.min(endSeconds, chapter.endSeconds) },
+      value: { ...q, options, question: q.question.trim(), concept: q.concept.trim(), startSeconds, endSeconds },
     };
   };
 }
@@ -340,7 +344,7 @@ export async function answerQuestion(
       chapter_position: waiting.topic,
       label: waiting.concept.slice(0, 200) || "Quiz question",
       start_seconds: waiting.startSeconds,
-      end_seconds: Math.max(waiting.endSeconds, waiting.startSeconds + 1),
+      end_seconds: Math.max(waiting.endSeconds, waiting.startSeconds + 10),
       source: "quiz",
     });
     if (error) console.error("[quiz] weak spot not saved:", error.code);

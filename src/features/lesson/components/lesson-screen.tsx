@@ -108,7 +108,7 @@ export function LessonScreen({
   const panelWidth = useStudyPanelWidth(layoutRef);
   const { data, stalled, refresh } = useLessonStatus(initial, videoId, language);
   const player = useYouTubePlayer(videoId, startSeconds);
-  const { mount: mountPlayer, error: playerError, getCurrentTime, ready: playerReady, play, pause } = player;
+  const { mount: mountPlayer, error: playerError, getCurrentTime, ready: playerReady, play, pause, seekTo } = player;
   const time = usePlaybackClock(player);
   const furthest = useProgressSaving(player, videoId, language, initialFurthest);
   usePlayerKeyboard(player);
@@ -184,7 +184,7 @@ export function LessonScreen({
   const activeChapter = active ? chapters.find((c) => c.position === active.chapterPosition) : undefined;
   const activeQuestion = activeChapter?.checkpoint ?? null;
 
-  const seek = useCallback((seconds: number) => player.seekTo(seconds), [player]);
+  const seek = seekTo;
 
   const openMine = useCallback((view: MineView) => {
     setRecapOpen(false);
@@ -198,20 +198,44 @@ export function LessonScreen({
   const [revise, setRevise] = useState<{ id: number; ranges: TimeRange[]; index: number } | null>(null);
   const [reviseFinished, setReviseFinished] = useState(0);
   const reviseRange = revise ? (revise.ranges[revise.index] ?? null) : null;
-  if (revise && reviseRange && player.state === "playing" && time >= reviseRange.endSeconds - 0.25) {
-    if (revise.index + 1 < revise.ranges.length) setRevise({ ...revise, index: revise.index + 1 });
-    else {
-      setRevise(null);
-      setReviseFinished((n) => n + 1);
-    }
-  }
   const reviseTick = revise ? `${revise.id}:${revise.index}` : null;
   const reviseStart = reviseRange?.startSeconds ?? null;
+  const hasArrivedAtRange = useRef(false);
+
   useEffect(() => {
+    hasArrivedAtRange.current = false;
     if (reviseTick === null || reviseStart === null) return;
     seek(reviseStart);
     play();
   }, [reviseTick, reviseStart, seek, play]);
+
+  useEffect(() => {
+    if (!revise || !reviseRange || player.state !== "playing") return;
+
+    // Guard against stale playback time from before the seek finished:
+    // Only arm completion once playback has actually entered the range.
+    if (!hasArrivedAtRange.current) {
+      const arrived =
+        Math.abs(time - reviseRange.startSeconds) <= 3 ||
+        (time >= reviseRange.startSeconds && time < reviseRange.endSeconds - 0.25);
+      if (arrived) {
+        hasArrivedAtRange.current = true;
+      }
+      return;
+    }
+
+    if (time >= reviseRange.endSeconds - 0.25) {
+      if (revise.index + 1 < revise.ranges.length) {
+        hasArrivedAtRange.current = false;
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- advance to next revision range when playback passes end
+        setRevise((prev) => (prev ? { ...prev, index: prev.index + 1 } : null));
+      } else {
+        setRevise(null);
+        setReviseFinished((n) => n + 1);
+      }
+    }
+  }, [time, revise, reviseRange, player.state]);
+
   useEffect(() => {
     if (reviseFinished === 0) return;
     pauseQuietly();
@@ -220,16 +244,19 @@ export function LessonScreen({
 
   const startRevise = useCallback(
     (ranges: TimeRange[]) => {
-      if (ranges.length === 0) return;
+      const valid = ranges.filter((r) => r.endSeconds > r.startSeconds);
+      if (valid.length === 0) return;
       checkpoints.close();
-      setRevise((prev) => ({ id: (prev?.id ?? 0) + 1, ranges, index: 0 }));
+      setRevise((prev) => ({ id: (prev?.id ?? 0) + 1, ranges: valid, index: 0 }));
     },
     [checkpoints],
   );
   const skipRevise = () => {
     if (!revise) return;
-    if (revise.index + 1 < revise.ranges.length) setRevise({ ...revise, index: revise.index + 1 });
-    else {
+    if (revise.index + 1 < revise.ranges.length) {
+      hasArrivedAtRange.current = false;
+      setRevise({ ...revise, index: revise.index + 1 });
+    } else {
       setRevise(null);
       setReviseFinished((n) => n + 1);
     }

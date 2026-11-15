@@ -22,7 +22,7 @@ export type Outline = z.infer<typeof OutlineSchema>;
 export const CheckpointSchema = z.object({
   concept: z.string().min(3).max(120),
   question: z.string().min(10).max(500),
-  options: z.array(z.string().min(1).max(200)).length(4),
+  options: z.array(z.string().min(1).max(200)),
   correctIndex: z.number().int().min(0).max(3),
   explanation: z.string().min(10).max(1200),
   misconception: z.string().max(300).nullable(),
@@ -47,11 +47,11 @@ export const ChapterDetailSchema = z.object({
   position: z.number().int().min(0),
   summary: z.string().min(10).max(600),
   notesMarkdown: z.string().min(10).max(4000),
-  keyTerms: z.array(z.string().max(80)).max(15),
-  formulas: z.array(z.string().max(300)).max(10),
-  keyMoments: z.array(KeyMomentInputSchema).max(10),
+  keyTerms: z.array(z.string().max(80)),
+  formulas: z.array(z.string().max(300)),
+  keyMoments: z.array(KeyMomentInputSchema),
   checkpoint: CheckpointSchema.nullable(),
-  segments: z.array(LessonSegmentSchema).min(1).max(40),
+  segments: z.array(LessonSegmentSchema),
 });
 export type ChapterDetail = z.infer<typeof ChapterDetailSchema>;
 

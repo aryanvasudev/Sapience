@@ -38,6 +38,8 @@ describe("weak topics", () => {
         { startSeconds: 55, endSeconds: 60 },
         { startSeconds: 0, endSeconds: 20 },
         { startSeconds: 25, endSeconds: 40 },
+        { startSeconds: 50, endSeconds: 50 },
+        { startSeconds: 70, endSeconds: 65 },
       ]),
     ).toEqual([
       { startSeconds: 0, endSeconds: 40 },

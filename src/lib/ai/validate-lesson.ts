@@ -135,6 +135,9 @@ export function isValidLatex(latex: string): boolean {
 function validateCheckpoint(checkpoint: Checkpoint | null, problems: string[]): Checkpoint | null {
   if (!checkpoint) return null;
   const options = checkpoint.options.map((o) => o.trim());
+  if (options.length !== 4) {
+    problems.push(`The checkpoint question "${checkpoint.question.slice(0, 60)}" must have exactly 4 options.`);
+  }
   if (new Set(options.map((o) => o.toLowerCase())).size !== options.length) {
     problems.push(`The checkpoint question "${checkpoint.question.slice(0, 60)}" has duplicate options.`);
   }
@@ -154,14 +157,18 @@ export function validateChapterDetail<D extends Omit<ChapterDetail, "segments"> 
   const { startSeconds: start, endSeconds: end } = bounds;
   const label = `Chapter ${detail.position + 1} (${mmss(start)}–${mmss(end)})`;
 
-  // Key moments: clamp near-misses into the chapter, drop the rest.
+  // Key moments: clamp near-misses into the chapter, drop the rest, max 10.
   const keyMoments = detail.keyMoments
     .filter((m) => m.seconds >= start - SNAP_TOLERANCE_SECONDS && m.seconds <= end + SNAP_TOLERANCE_SECONDS)
     .map((m) => ({ seconds: Math.min(Math.max(m.seconds, start), end), label: m.label.trim() }))
-    .sort((a, b) => a.seconds - b.seconds);
+    .sort((a, b) => a.seconds - b.seconds)
+    .slice(0, 10);
 
-  const formulas = detail.formulas.map((f) => f.trim()).filter((f) => f.length > 0 && isValidLatex(f));
-  const keyTerms = [...new Set(detail.keyTerms.map((t) => t.trim()).filter(Boolean))];
+  const formulas = detail.formulas
+    .map((f) => f.trim())
+    .filter((f) => f.length > 0 && isValidLatex(f))
+    .slice(0, 10);
+  const keyTerms = [...new Set(detail.keyTerms.map((t) => t.trim()).filter(Boolean))].slice(0, 15);
   const checkpoint = validateCheckpoint(detail.checkpoint, problems);
 
   let segments = detail.segments;

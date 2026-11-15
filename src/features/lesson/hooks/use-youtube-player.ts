@@ -5,7 +5,7 @@
  * host, never autoplays, maps player errors to plain messages, and cleans up on unmount.
  * Nothing is ever drawn over the iframe.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type YTPlayer = {
   playVideo(): void;
@@ -179,5 +179,8 @@ export function useYouTubePlayer(videoId: string, startSeconds: number): YouTube
     [withPlayer],
   );
 
-  return { mount: setElement, state, error, ready, getCurrentTime, getDuration, seekTo, play, pause, togglePlay };
+  return useMemo(
+    () => ({ mount: setElement, state, error, ready, getCurrentTime, getDuration, seekTo, play, pause, togglePlay }),
+    [state, error, ready, getCurrentTime, getDuration, seekTo, play, pause, togglePlay],
+  );
 }
